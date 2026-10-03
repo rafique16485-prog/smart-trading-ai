@@ -12297,12 +12297,12 @@ updateProgress();
  const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:2}):"—";
  function status(t,c){const x=el("v75Status");x.textContent=t;x.className="liveStatus "+(c||"")}
  window.runSwingScanner75=async function(){
-  status("⏳ SCANNING…","");el("v75Body").innerHTML='<tr><td colspan="18">Scanning universe, technical structure, trade plan and recent news…</td></tr>';
+  status("⏳ SCANNING…","");el("v75Body").innerHTML='<tr><td colspan="19">Scanning universe, technical structure, trade plan and recent news…</td></tr>';
   try{
    const u=el("v75Universe").value,r=await fetch("/api/upstox/swing-scanner?universe="+encodeURIComponent(u),{cache:"no-store"}),d=await r.json();
    if(!r.ok||d.error)throw new Error(d.error||"Scanner failed");
    set("v75UniverseStat",d.scanned);set("v75Shortlist",d.results.length);set("v75Breakouts",d.results.filter(x=>x.breakout).length);set("v75HighVol",d.results.filter(x=>x.volumeRatio>=1.5).length);
-   if(!d.results.length){el("v75Body").innerHTML='<tr><td colspan="18">No candidates met the technical evidence filter. This is a valid NO-TRADE result.</td></tr>';status("🟡 NO CLEAN SETUP","");return}
+   if(!d.results.length){el("v75Body").innerHTML='<tr><td colspan="19">No candidates met the technical evidence filter. This is a valid NO-TRADE result.</td></tr>';status("🟡 NO CLEAN SETUP","");return}
    el("v75Body").innerHTML=d.results.map(x=>{
     const setup=x.trigger?"🟢 WATCH / READY":"🟡 WATCH";
     const news=x.news==="NEWS"?x.newsImpact:"NONE";
@@ -12319,7 +12319,7 @@ updateProgress();
     return '<tr><td><b>'+esc(x.symbol)+'</b><br><small>'+esc((x.groups||[]).join(" + "))+'</small></td><td class="v75Score">'+esc(x.score)+'/7</td><td>'+esc(nf(x.ltp))+'</td><td>'+esc(nf(x.rsi))+'</td><td>'+esc(x.volumeRatio==null?"—":Number(x.volumeRatio).toFixed(2)+"×")+'</td><td class="'+(x.breakout?"v75Yes":"v75No")+'">'+(x.breakout?"YES":"—")+'</td><td class="'+(x.consolidation?"v75Yes":"v75No")+'">'+(x.consolidation?"YES":"—")+'</td><td class="'+(x.trend?"v75Yes":"v75No")+'">'+(x.trend?"UP":"—")+'</td><td class="v75News">'+esc(news)+(x.newsHeadlines?.length?'<br><small>'+esc(x.newsHeadlines[0])+'</small>':"")+'</td><td>'+gov+'</td><td><b>'+setup+'</b></td><td>'+esc(entry)+'</td><td>'+esc(sl)+'</td><td>'+esc(t1)+'</td><td>'+esc(t2)+'</td><td>'+rr+'</td><td>'+esc(q)+'</td><td>'+esc(hold)+'</td></tr>';
    }).join("");
    status("🟢 SCAN COMPLETE","ok");
-  }catch(e){el("v75Body").innerHTML='<tr><td colspan="18">🟠 WAIT — '+esc(e.message||"Required data unavailable.")+'</td></tr>';status("🟠 SCAN UNAVAILABLE","bad")}
+  }catch(e){el("v75Body").innerHTML='<tr><td colspan="19">🟠 WAIT — '+esc(e.message||"Required data unavailable.")+'</td></tr>';status("🟠 SCAN UNAVAILABLE","bad")}
  };
 })();
 </script>
