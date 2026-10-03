@@ -12451,4 +12451,33 @@ updateProgress();
  if(typeof old==="function")window.runSwingScanner75=async function(){const x=await old.apply(this,arguments);setTimeout(refresh,100);return x};
  setTimeout(add,500);
 })();
+</script><script>
+/* V78 FUNDAMENTAL + CORPORATE ACTION LAYER */
+(function(){
+ const el=id=>document.getElementById(id);
+ function esc2(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+ function add(){
+  const box=document.getElementById("v77Summary");if(!box||document.getElementById("v78Summary"))return;
+  const d=document.createElement("div");d.id="v78Summary";d.style.cssText="margin-top:12px;padding:14px;border:1px solid #dbe3ec;border-radius:14px;background:#fff";
+  d.innerHTML='<b>📋 V78 — Shareholding + Corporate Actions</b><div id="v78Text" class="small" style="margin-top:7px">Run scan to load company-level context for the technical shortlist.</div>';
+  box.parentNode.insertBefore(d,box.nextSibling);
+ }
+ async function refresh(){
+  add();const out=document.getElementById("v78Text");if(!out)return;
+  try{
+   const u=el("v75Universe")?.value||"both";
+   const r=await fetch("/api/upstox/swing-scanner?universe="+encodeURIComponent(u),{cache:"no-store"}),d=await r.json();
+   const ready=(d.results||[]).filter(x=>x.fundamentals&&!x.fundamentals.error).slice(0,5);
+   if(!ready.length){out.textContent="No company-level fundamentals available in this scan.";return}
+   out.innerHTML=ready.map(x=>{
+    const f=x.fundamentals||{},s=f.shareholding||{},acts=f.corporateActions||[];
+    const act=acts.length?acts.map(a=>esc2(a.name)+" "+esc2(a.expiry_date||"")).join(" • "):"None returned";
+    return "<div style='padding:8px 0;border-bottom:1px solid #edf0f2'><b>"+esc2(x.symbol)+"</b> — Promoter "+(s.promoter==null?"—":Number(s.promoter).toFixed(2)+"%")+" | FII "+(s.fii==null?"—":Number(s.fii).toFixed(2)+"%")+" | DII "+(s.dii==null?"—":Number(s.dii).toFixed(2)+"%")+"<br><small>QoQ Δ: Promoter "+(s.promoterChange==null?"—":Number(s.promoterChange).toFixed(2)+"pp")+" • FII "+(s.fiiChange==null?"—":Number(s.fiiChange).toFixed(2)+"pp")+" • DII "+(s.diiChange==null?"—":Number(s.diiChange).toFixed(2)+"pp")+" • Actions: "+act+"</small></div>";
+   }).join("");
+  }catch(e){out.textContent="V78 context unavailable — "+(e.message||"try again after data is available.")}
+ }
+ const old=window.runSwingScanner75;
+ if(typeof old==="function")window.runSwingScanner75=async function(){const x=await old.apply(this,arguments);setTimeout(refresh,150);return x};
+ setTimeout(add,800);
+})();
 </script></body></html>
