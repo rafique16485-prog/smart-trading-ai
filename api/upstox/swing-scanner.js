@@ -119,17 +119,30 @@ module.exports=async(req,res)=>{
         const avgVol=prior.reduce((s,c)=>s+c.volume,0)/prior.length;
         const volRatio=x.vol&&avgVol?x.vol/avgVol:null;
         const rrsi=rsi([...closes,x.ltp||prior.at(-1).close],14);
-        const e20=ema([...closes,x.ltp||prior.at(-1).close],20);
-        const e50=ema([...closes,x.ltp||prior.at(-1).close],50);
+        const series=[...closes,x.ltp||prior.at(-1).close];
+        const e20=ema(series,20);
+        const e50=ema(series,50);
         const rangePct=mid?((hi-lo)/mid)*100:null;
         const breakout=x.ltp>hi;
         const consolidation=rangePct!=null&&rangePct<=12;
         const volumeUp=volRatio!=null&&volRatio>=1.5;
         const rsiOK=rrsi!=null&&rrsi>=60&&rrsi<=80;
         const trend=x.ltp>e20&&e20>e50;
+        const trs=prior.slice(-15).map(c=>Math.max(c.high-c.low,Math.abs(c.high-(c.close||c.high)),Math.abs(c.low-(c.close||c.low))));
+        const atr14=trs.length?trs.reduce((s,v)=>s+v,0)/trs.length:null;
+        const entryBase=hi;
+        const entryHigh=atr14!=null?hi+atr14*0.25:hi;
+        const chaseLimit=atr14!=null?hi+atr14*1.0:hi*1.03;
+        const chase=breakout&&x.ltp>chaseLimit;
+        const entryLow=hi;
+        const invalidation=atr14!=null?hi-atr14*0.75:Math.min(hi,prior.at(-1).low);
+        const riskPerShare=Math.max(0,entryLow-invalidation);
+        const target1=entryLow+riskPerShare*1.5;
+        const target2=entryLow+riskPerShare*2;
+        const holdingDays=atr14&&riskPerShare>0?Math.max(3,Math.min(15,Math.round((riskPerShare/atr14)*8))):7;
         let score=0; if(breakout)score+=2;if(volumeUp)score+=2;if(consolidation)score+=1;if(rsiOK)score+=1;if(trend)score+=1;
-        const trigger=breakout&&volumeUp&&rsiOK;
-        return {...x,eligible:true,breakout,consolidation,volumeRatio:volRatio,rsi:rrsi,ema20:e20,ema50:e50,rangePct,trend,score,trigger,priorHigh:hi,priorLow:lo};
+        const trigger=breakout&&volumeUp&&rsiOK&&!chase;
+        return {...x,eligible:true,breakout,consolidation,volumeRatio:volRatio,rsi:rrsi,ema20:e20,ema50:e50,rangePct,trend,score,trigger,priorHigh:hi,priorLow:lo,atr14,entryLow,entryHigh,invalidation,riskPerShare,target1,target2,holdingDays,chase};
       }catch(e){return {...x,eligible:false,error:e.message}}
     }));
     const scored=hist.filter(x=>x.eligible).sort((a,b)=>b.score-a.score||b.volumeRatio-a.volumeRatio).slice(0,30);
@@ -145,7 +158,7 @@ module.exports=async(req,res)=>{
       const ni=newsImpact(newsMap[x.key]||[]);
       return {...x,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading)};
     });
-    return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,results,notes:{
+    return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,results,tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
       volume:"Today volume / prior 20 completed daily bars",
       breakout:"LTP above prior 20-day high",
       consolidation:"Prior 20-day range <= 12%",
