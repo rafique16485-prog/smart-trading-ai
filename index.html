@@ -1,4 +1,29 @@
-<!DOCTYPE html>
+
+<style id="v70Styles">
+.v70{margin-top:18px}
+.v70Head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.v70Tools{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.v70Tools select,.v70Tools button{min-height:44px}
+.v70Grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.v70Stat{padding:14px;border:1px solid #e4e7eb;border-radius:14px;background:#fff}
+.v70Stat b{display:block;font-size:12px;color:#697586;margin-bottom:5px}
+.v70Stat strong{font-size:18px}
+.v70Evidence{margin-top:14px;padding:16px;border:1px solid #e4e7eb;border-radius:16px;background:#fafbfc}
+.v70EvidenceGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.v70EvidenceItem{padding:10px 12px;border-radius:11px;background:#fff;border:1px solid #eceff2}
+.v70EvidenceItem b{font-size:12px;color:#697586}
+.v70EvidenceItem div{font-weight:700;margin-top:3px}
+.v70Gate{margin-top:14px;padding:16px;border-radius:15px;font-size:16px}
+.v70Wait{background:#fff3e8;border:1px solid #ffd7ad}
+.v70Bull{background:#eaf8ef;border:1px solid #bde5c9}
+.v70Bear{background:#fff0f0;border:1px solid #f2c2c2}
+.v70Bar{height:10px;background:#e8ebef;border-radius:99px;overflow:hidden;margin-top:8px}
+.v70Bar i{display:block;height:100%;width:0%;transition:width .25s}
+.v70Foot{margin-top:10px}
+@media(max-width:800px){.v70Grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.v70Grid,.v70EvidenceGrid{grid-template-columns:1fr}}
+</style>
+</head><!DOCTYPE html>
 
 <html lang="hi"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>Trading Learning AI V8 — Visual Chart Lab</title>
@@ -260,6 +285,50 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
  <div id="c69Verdict" class="c69card c69wait">📊 FINAL: WAIT — insufficient confluence.</div>
  <p class="small muted">V69 is a rule-based evidence display, not a guaranteed trading signal. It does not invent missing VWAP/candle/volume data.</p>
 </section>
+
+<section id="smartSetup70" class="hero v70">
+  <div class="v70Head">
+    <div>
+      <h2>🧠 V70 — Smart Trade Setup Card</h2>
+      <p class="muted">V67 Option Chain + V68 OI Pressure + V69 VWAP/5M/Volume • One evidence dashboard</p>
+    </div>
+    <div id="v70Status" class="liveStatus">⏳ Loading…</div>
+  </div>
+  <div class="v70Tools">
+    <select id="v70Underlying" aria-label="V70 Underlying">
+      <option value="nifty">NIFTY 50</option>
+      <option value="banknifty">BANK NIFTY</option>
+    </select>
+    <button onclick="loadSmartSetup70()">🧠 Analyze Setup</button>
+  </div>
+  <div class="v70Grid">
+    <div class="v70Stat"><b>SPOT</b><strong id="v70Spot">—</strong></div>
+    <div class="v70Stat"><b>VWAP</b><strong id="v70VWAP">—</strong></div>
+    <div class="v70Stat"><b>5M STRUCTURE</b><strong id="v70Structure">—</strong></div>
+    <div class="v70Stat"><b>VOLUME</b><strong id="v70Volume">—</strong></div>
+    <div class="v70Stat"><b>PCR</b><strong id="v70PCR">—</strong></div>
+    <div class="v70Stat"><b>OI PRESSURE</b><strong id="v70OI">—</strong></div>
+    <div class="v70Stat"><b>KEY SUPPORT</b><strong id="v70Support">—</strong></div>
+    <div class="v70Stat"><b>KEY RESISTANCE</b><strong id="v70Resistance">—</strong></div>
+  </div>
+
+  <div class="v70Evidence">
+    <h3 style="margin-top:0">Evidence Checklist</h3>
+    <div class="v70EvidenceGrid">
+      <div class="v70EvidenceItem"><b>① VWAP</b><div id="v70E1">—</div></div>
+      <div class="v70EvidenceItem"><b>② Structure</b><div id="v70E2">—</div></div>
+      <div class="v70EvidenceItem"><b>③ Candle + Volume</b><div id="v70E3">—</div></div>
+      <div class="v70EvidenceItem"><b>④ OI / PCR</b><div id="v70E4">—</div></div>
+    </div>
+    <div style="margin-top:14px"><b>Evidence Score: <span id="v70Score">—</span></b>
+      <div class="v70Bar"><i id="v70Bar"></i></div>
+    </div>
+  </div>
+
+  <div id="v70Gate" class="v70Gate v70Wait">📊 <b>DECISION GATE: WAIT</b> — waiting for complete evidence.</div>
+  <p class="small muted v70Foot">V70 is an educational evidence-combination layer. It does not guarantee a trade outcome and does not place orders. Missing/closed-market data → WAIT.</p>
+</section>
+
 <div id="topics">
 <section class="topic" id="topic-01">
 <div class="topic-head"><span class="num">01</span><div><h2>Trading Basics</h2><p class="muted">Capital, liquidity, timeframe, orders, risk और trading process.</p></div></div>
@@ -11886,4 +11955,87 @@ updateProgress();
  setTimeout(loadConfluence69,900);
 })();
 </script>
+
+<script>
+/* V70 SMART TRADE SETUP CARD */
+(function(){
+  const el=id=>document.getElementById(id);
+  const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:2}):"—";
+  const set=(id,v)=>{if(el(id))el(id).textContent=v};
+  const status=(t,cls)=>{const x=el("v70Status");if(x){x.textContent=t;x.className="liveStatus "+(cls||"")}};
+  const underlyingName=u=>u==="banknifty"?"BANK NIFTY":"NIFTY 50";
+
+  window.loadSmartSetup70=async function(){
+    const u=el("v70Underlying").value;
+    status("⏳ ANALYZING…","");
+    const gate=el("v70Gate");
+    try{
+      const cr=await fetch("/api/upstox/confluence?underlying="+encodeURIComponent(u)+"&interval=5",{cache:"no-store"});
+      const cd=await cr.json();
+
+      let or=await fetch("/api/upstox/option-chain?underlying="+encodeURIComponent(u)+"&expiry=current_week",{cache:"no-store"});
+      let od=await or.json();
+      if(!od.chain?.length){
+        or=await fetch("/api/upstox/option-chain?underlying="+encodeURIComponent(u)+"&expiry=next_week",{cache:"no-store"});
+        od=await or.json();
+      }
+
+      if(!cd.count || !od.chain?.length) throw new Error("Required live evidence is unavailable. Market may be closed.");
+
+      const spot=Number(od.spot);
+      const pcr=typeof od.full_chain?.pcr==="number"?od.full_chain.pcr:null;
+      const vwap=typeof cd.vwap==="number"?cd.vwap:null;
+
+      const maxPE=od.chain.reduce((best,x)=>Number(x.pe?.oi||0)>Number(best?.pe?.oi||0)?x:best,null);
+      const maxCE=od.chain.reduce((best,x)=>Number(x.ce?.oi||0)>Number(best?.ce?.oi||0)?x:best,null);
+
+      const peAdd=od.chain.reduce((s,x)=>s+Math.max(0,Number(x.pe?.oi_change||0)),0);
+      const ceAdd=od.chain.reduce((s,x)=>s+Math.max(0,Number(x.ce?.oi_change||0)),0);
+      const oiPressure=peAdd>ceAdd*1.25?"PUT-SIDE SUPPORT":ceAdd>peAdd*1.15?"CALL-SIDE PRESSURE":"MIXED OI";
+
+      const f1=cd.above_vwap==null?0:(cd.above_vwap?1:-1);
+      const f2=cd.structure_5m==="HH-HL"?1:cd.structure_5m==="LH-LL"?-1:0;
+      const f3=cd.candle_bias==="BULLISH"?1:cd.candle_bias==="BEARISH"?-1:0;
+      const f4=cd.volume_spike?(cd.candle_bias==="BULLISH"?1:cd.candle_bias==="BEARISH"?-1:0):0;
+      const f5=oiPressure==="PUT-SIDE SUPPORT"?1:oiPressure==="CALL-SIDE PRESSURE"?-1:0;
+      const score=f1+f2+f3+f4+f5;
+      const confidence=Math.round(Math.abs(score)/5*100);
+
+      set("v70Spot",nf(spot));
+      set("v70VWAP",vwap==null?"Unavailable":(cd.above_vwap?"ABOVE ":"BELOW ")+nf(vwap));
+      set("v70Structure",cd.structure_5m||"Unavailable");
+      set("v70Volume",cd.volume_ratio==null?"Unavailable":nf(cd.volume_ratio)+"× avg"+(cd.volume_spike?" • SPIKE":""));
+      set("v70PCR",pcr==null?"Unavailable":pcr.toFixed(3));
+      set("v70OI",oiPressure);
+      set("v70Support",maxPE?nf(Number(maxPE.strike)):"—");
+      set("v70Resistance",maxCE?nf(Number(maxCE.strike)):"—");
+
+      set("v70E1",f1>0?"Above VWAP • bullish evidence":f1<0?"Below VWAP • bearish evidence":"Neutral");
+      set("v70E2",cd.structure_5m||"Unavailable");
+      set("v70E3",(cd.candle_bias||"Unavailable")+" • "+(cd.volume_spike?"volume spike":"no spike"));
+      set("v70E4",oiPressure+" • PCR "+(pcr==null?"—":pcr.toFixed(3)));
+      set("v70Score",(score>0?"+":"")+score+" / 5 • "+confidence+"% alignment");
+      el("v70Bar").style.width=confidence+"%";
+
+      let verdict="WAIT",reason="Evidence is mixed or incomplete.";
+      let cls="v70Wait";
+      if(score>=4){verdict="BULLISH CONFLUENCE";reason="At least 4 evidence factors align bullishly.";cls="v70Bull";}
+      else if(score<=-4){verdict="BEARISH CONFLUENCE";reason="At least 4 evidence factors align bearishly.";cls="v70Bear";}
+
+      gate.className="v70Gate "+cls;
+      gate.innerHTML="📊 <b>DECISION GATE: "+verdict+"</b> — "+reason+"<br><small>"+underlyingName(u)+" • Evidence only • No order execution</small>";
+      status("🟢 EVIDENCE READY","ok");
+    }catch(e){
+      set("v70Spot","—");set("v70VWAP","—");set("v70Structure","—");set("v70Volume","—");set("v70PCR","—");set("v70OI","—");set("v70Support","—");set("v70Resistance","—");
+      set("v70E1","Unavailable");set("v70E2","Unavailable");set("v70E3","Unavailable");set("v70E4","Unavailable");set("v70Score","—");el("v70Bar").style.width="0%";
+      gate.className="v70Gate v70Wait";
+      gate.innerHTML="📊 <b>DECISION GATE: WAIT</b> — "+(e.message||"Required data unavailable.");
+      status("🟠 WAIT • DATA UNAVAILABLE","bad");
+    }
+  };
+
+  setTimeout(function(){if(typeof window.loadSmartSetup70==="function")window.loadSmartSetup70()},1400);
+})();
+</script>
+
 </body></html>
