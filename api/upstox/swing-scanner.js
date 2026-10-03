@@ -95,7 +95,8 @@ module.exports=async(req,res)=>{
     csvs.forEach(([group,text])=>csvRows(text).forEach(r=>{
       const symbol=r.symbol||r.trading_symbol||r.symbol_name;
       const isin=r.isin_code||r.isin||r.isin_code_;
-      if(symbol&&isin)map.set(isin,{symbol,isin,groups:[...(map.get(isin)?.groups||[]),group]});
+      const industry=r.industry||r.sector||r.industry_name||"UNKNOWN";
+      if(symbol&&isin)map.set(isin,{symbol,isin,industry,groups:[...(map.get(isin)?.groups||[]),group]});
     }));
     const universeRows=[...map.values()];
     const keys=universeRows.map(x=>"NSE_EQ|"+x.isin);
@@ -154,11 +155,44 @@ module.exports=async(req,res)=>{
         Object.assign(newsMap,nb?.data||{});
       }catch(e){}
     }
+    // Market-wide NIFTY benchmark + institutional flow context
+    let benchmarkReturn=null;
+    try{
+      const nb=await fetchHistory("NSE_INDEX|Nifty 50",token,to,from);
+      const nc=(nb?.data?.candles||[]).map(a=>({close:num(a[4])})).filter(x=>x.close!=null).reverse();
+      if(nc.length>=21){
+        const b0=nc[nc.length-21].close,b1=nc[nc.length-1].close;
+        benchmarkReturn=b0?((b1-b0)/b0)*100:null;
+      }
+    }catch(e){}
+
+    let fiiDii={available:false};
+    try{
+      const d=istDate();
+      const [fi,di]=await Promise.all([
+        request("https://api.upstox.com/v2/market/fii?date="+encodeURIComponent(d)+"&data_type=equity",token),
+        request("https://api.upstox.com/v2/market/dii?date="+encodeURIComponent(d)+"&data_type=equity",token)
+      ]);
+      fiiDii={available:true,date:d,fii:fi?.data||fi,dii:di?.data||di};
+    }catch(e){ fiiDii={available:false,message:e.message||"Institutional flow unavailable"}; }
+
+    // Sector/industry relative strength from the scanned universe
+    const sectorMap={};
+    scored.forEach(x=>{
+      const k=x.industry||"UNKNOWN";
+      if(!sectorMap[k])sectorMap[k]={sum:0,count:0,breakouts:0};
+      const base=x.pc||x.ltp;
+      const ret=base&&x.ltp?((x.ltp-base)/base)*100:0;
+      sectorMap[k].sum+=ret;sectorMap[k].count++;if(x.breakout)sectorMap[k].breakouts++;
+    });
+    const sectorStats=Object.fromEntries(Object.entries(sectorMap).map(([k,v])=>[k,{avgReturn:v.count?v.sum/v.count:0,count:v.count,breakouts:v.breakouts}]));
     const results=scored.map(x=>{
       const ni=newsImpact(newsMap[x.key]||[]);
-      return {...x,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading)};
+      const sector=sectorStats[x.industry||"UNKNOWN"]||{avgReturn:0,count:0,breakouts:0};
+      const relativeStrength=benchmarkReturn!=null&&x.changePct!=null?x.changePct-benchmarkReturn:null;
+      return {...x,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading)};
     });
-    return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,results,tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
+    return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,benchmark:{name:"NIFTY 50",returnPct:benchmarkReturn},institutional:fiiDii,sectorStats,results,tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
       volume:"Today volume / prior 20 completed daily bars",
       breakout:"LTP above prior 20-day high",
       consolidation:"Prior 20-day range <= 12%",
