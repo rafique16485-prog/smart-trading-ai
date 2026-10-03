@@ -35,6 +35,7 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 .visual svg circle{stroke:#111827;stroke-width:2}
 </style>
 <style>
+.liveHeadActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 #liveMarket{border:2px solid #dbeafe;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%)}
 .liveHead{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
 .liveStatus{padding:7px 11px;border-radius:999px;background:#fef3c7;color:#92400e;font-weight:800;font-size:13px}
@@ -80,7 +81,10 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
       <h2>📡 Smart Trading AI — Live Market</h2>
       <p class="muted">Upstox V3 • Server-side secure connection • Educational dashboard</p>
     </div>
-    <div class="liveStatus" id="liveStatus">⏳ Checking connection…</div>
+    <div class="liveHeadActions">
+      <div class="liveStatus" id="liveStatus">⏳ Checking connection…</div>
+      <button id="upstoxConnectBtn" onclick="connectUpstox()" style="display:none">🔐 Connect Upstox</button>
+    </div>
   </div>
   <div class="liveGrid">
     <div class="liveCard"><div class="liveName">NIFTY 50</div><div class="livePrice" id="liveNifty">—</div><div class="liveMeta" id="liveNiftyMeta">Waiting…</div></div>
@@ -11471,6 +11475,7 @@ updateProgress();
     const el=document.getElementById("liveStatus");
     el.textContent=text; el.className="liveStatus "+(cls||"");
   }
+  window.connectUpstox = function(){ window.location.href="/api/upstox/login"; };
   window.refreshLiveMarket = async function(){
     const err=document.getElementById("liveError");
     err.style.display="none";
@@ -11479,10 +11484,13 @@ updateProgress();
       const sj=await s.json();
       if(!sj.connected){
         setStatus("🔴 Upstox not connected","bad");
-        err.textContent="Upstox connection नहीं है. पहले Login/Connect करें.";
+        const btn=document.getElementById("upstoxConnectBtn");
+        btn.style.display="inline-block";
+        err.textContent="Upstox connection नहीं है. Connect Upstox दबाएँ.";
         err.style.display="block";
         return;
       }
+      document.getElementById("upstoxConnectBtn").style.display="none";
       setStatus("🟢 LIVE • UPSTOX","ok");
       const q=await fetch("/api/upstox/quote",{cache:"no-store"});
       const data=await q.json();
