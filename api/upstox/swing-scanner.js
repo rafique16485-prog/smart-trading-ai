@@ -190,10 +190,13 @@ module.exports=async(req,res)=>{
     const fundMap={};
     await Promise.all(scored.slice(0,15).map(async x=>{
       try{
-        const [sh,ca,rat] = await Promise.all([
+        const [sh,ca,rat,inc,cf,bs] = await Promise.all([
           request("https://api.upstox.com/v2/fundamentals/"+encodeURIComponent(x.isin)+"/share-holdings",token),
           request("https://api.upstox.com/v2/fundamentals/"+encodeURIComponent(x.isin)+"/corporate-actions",token),
-          request("https://api.upstox.com/v2/fundamentals/"+encodeURIComponent(x.isin)+"/key-ratios",token)
+          request("https://api.upstox.com/v2/fundamentals/"+encodeURIComponent(x.isin)+"/key-ratios",token),
+          request("https://api.upstox.com/v2/fundamentals/"+encodeURIComponent(x.isin)+"/income-statement?type=consolidated&time_period=quarterly",token),
+          request("https://api.upstox.com/v2/fundamentals/"+encodeURIComponent(x.isin)+"/cash-flow?type=consolidated",token),
+          request("https://api.upstox.com/v2/fundamentals/"+encodeURIComponent(x.isin)+"/balance-sheet?type=consolidated",token)
         ]);
         const cats=sh?.data||[];
         const latest=cat=>{const h=cats.find(z=>String(z.category||"").toLowerCase()===cat)?.history||[];return h.length?h[h.length-1]:null};
@@ -202,7 +205,30 @@ module.exports=async(req,res)=>{
         const pp=prev("promoters"),fp=prev("fii"),dp=prev("other_dii");
         const actions=Array.isArray(ca?.data)?ca.data.slice(0,5):[];
         const ratios=rat?.data||{};
-        fundMap[x.isin]={shareholding:{promoter:p?.value??null,fii:fi?.value??null,dii:di?.value??null,promoterChange:pp&&p?p.value-pp.value:null,fiiChange:fp&&fi?fi.value-fp.value:null,diiChange:dp&&di?di.value-dp.value:null,period:p?.period||fi?.period||di?.period||null},corporateActions:actions.slice(0,3).map(a=>({name:a.name,expiry_date:a.expiry_date,amount:a.amount,ratio:a.ratio})),ratios};
+        const income=inc?.data?.income_statement||[];
+        const cash=cf?.data?.cash_flow||[];
+        const balance=bs?.data?.history||[];
+        const pickHist=(arr, names)=>{const z=arr.find(q=>names.includes(String(q.category||"").toLowerCase()));return z?.history||[]};
+        const rev=pickHist(income,["revenue"]), op=pickHist(income,["operating profit","operating_profit"]), np=pickHist(income,["net profit","net_profit"]);
+        const latestVal=a=>a.length?a[a.length-1]:null, prevVal=a=>a.length>1?a[a.length-2]:null;
+        const rv=latestVal(rev), pv=latestVal(np), ov=latestVal(op), rvp=prevVal(rev), pvp=prevVal(np);
+        const quality={
+          revenue:rv?.value??null, revenueGrowth:rv?.change??null,
+          netProfit:pv?.value??null, netProfitGrowth:pv?.change??null,
+          operatingProfit:ov?.value??null,
+          totalAssets:latestVal(balance)?.total_asset??null,
+          totalLiability:latestVal(balance)?.total_liability??null,
+          cashFlow:cash,
+          ratios
+        };
+        const ratioMap={};(ratios?.data||ratios||[]).forEach(q=>{ratioMap[String(q.name||"").toUpperCase()]=q});
+        const roe=ratioMap.ROE?.company_value, roce=ratioMap.ROCE?.company_value;
+        const qualityFlags=[];
+        if(roe)qualityFlags.push("ROE "+roe);
+        if(roce)qualityFlags.push("ROCE "+roce);
+        if(rv?.change)qualityFlags.push("Revenue "+rv.change);
+        if(pv?.change)qualityFlags.push("Profit "+pv.change);
+        fundMap[x.isin]={shareholding:{promoter:p?.value??null,fii:fi?.value??null,dii:di?.value??null,promoterChange:pp&&p?p.value-pp.value:null,fiiChange:fp&&fi?fi.value-fp.value:null,diiChange:dp&&di?di.value-dp.value:null,period:p?.period||fi?.period||di?.period||null},corporateActions:actions.slice(0,3).map(a=>({name:a.name,expiry_date:a.expiry_date,amount:a.amount,ratio:a.ratio})),ratios,quality,qualityFlags};
       }catch(e){fundMap[x.isin]={error:e.message||"Fundamentals unavailable"}}
     }));
     const results=scored.map(x=>{
