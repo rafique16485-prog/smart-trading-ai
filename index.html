@@ -48,6 +48,11 @@
 .v73Grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}.v73Box{padding:12px;border:1px solid #e4e7eb;border-radius:13px;background:#fff}.v73Box b{display:block;font-size:11px;color:#697586}.v73Box strong{display:block;margin-top:4px;font-size:16px}
 .v73Setup{margin-top:12px;padding:15px;border-radius:15px;border:1px solid #e4e7eb;background:#fff}.v73Row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #edf0f2}.v73Row:last-child{border-bottom:0}.v73Row b{color:#697586}.v73Gate{margin-top:12px;padding:15px;border-radius:15px}.v73Wait{background:#fff3e8;border:1px solid #ffd7ad}.v73Alive{background:#eaf8ef;border:1px solid #bde5c9}.v73Kill{background:#fff0f0;border:1px solid #f2c2c2}
 @media(max-width:760px){.v73Grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){.v73Grid{grid-template-columns:1fr}}
+</style><style id="v74Styles">
+.v74{margin-top:18px}.v74Head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}.v74Tools{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.v74Tools select,.v74Tools button{min-height:44px}
+.v74Panel{padding:16px;border:1px solid #e4e7eb;border-radius:16px;background:#fff}.v74Title{font-size:23px;font-weight:800}.v74Grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.v74Box{padding:12px;border:1px solid #e4e7eb;border-radius:13px}.v74Box b{display:block;font-size:11px;color:#697586}.v74Box strong{display:block;margin-top:4px;font-size:16px}
+.v74Levels{margin-top:12px}.v74Level{display:grid;grid-template-columns:130px 1fr 110px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #edf0f2}.v74Level:last-child{border-bottom:0}.v74Tag{font-weight:800}.v74Bar{height:10px;background:#edf0f3;border-radius:99px;overflow:hidden}.v74Bar i{display:block;height:100%;width:0%}.v74Note{margin-top:12px;padding:12px;border-radius:13px;background:#f7f8fa}.v74Gate{margin-top:12px;padding:15px;border-radius:15px}.v74Wait{background:#fff3e8;border:1px solid #ffd7ad}.v74Ready{background:#eaf8ef;border:1px solid #bde5c9}
+@media(max-width:650px){.v74Grid{grid-template-columns:1fr}.v74Level{grid-template-columns:95px 1fr 80px;font-size:12px}}
 </style></head><!DOCTYPE html>
 
 <html lang="hi"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
@@ -400,6 +405,22 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 </div>
 <div id="v73Gate" class="v73Gate v73Wait">📊 <b>DECISION GATE: WAIT</b> — evidence incomplete.</div>
 <p class="small muted">V73 is an evidence-based educational framework. It does not predict future moves, guarantee profits, or place orders. Entry is trigger-based; if price is already extended, the engine can return CHASE → WAIT.</p>
+</section>
+<section id="liquidity74" class="hero v74">
+<div class="v74Head"><div><h2>💧 V74 — Liquidity + Breakout Confirmation Engine</h2><p class="muted">Previous swing levels + VWAP + volume expansion • breakout / fakeout filter</p></div><div id="v74Status" class="liveStatus">⏳ Loading…</div></div>
+<div class="v74Tools"><select id="v74Underlying"><option value="nifty">NIFTY 50</option><option value="banknifty">BANK NIFTY</option></select><button onclick="loadLiquidity74()">💧 Analyze Liquidity</button></div>
+<div class="v74Panel"><div id="v74Title" class="v74Title">WAIT</div><div id="v74Sub" class="muted">Waiting for live 5-minute evidence.</div></div>
+<div class="v74Grid">
+<div class="v74Box"><b>RECENT HIGH</b><strong id="v74High">—</strong></div><div class="v74Box"><b>RECENT LOW</b><strong id="v74Low">—</strong></div><div class="v74Box"><b>VWAP</b><strong id="v74VWAP">—</strong></div>
+<div class="v74Box"><b>LAST PRICE</b><strong id="v74Price">—</strong></div><div class="v74Box"><b>VOLUME</b><strong id="v74Volume">—</strong></div><div class="v74Box"><b>STRUCTURE</b><strong id="v74Structure">—</strong></div>
+</div>
+<div class="v74Levels">
+<div class="v74Level"><span class="v74Tag">RESISTANCE</span><div class="v74Bar"><i id="v74ResBar"></i></div><strong id="v74ResText">—</strong></div>
+<div class="v74Level"><span class="v74Tag">PRICE</span><div class="v74Bar"><i id="v74PriceBar"></i></div><strong id="v74PriceText">—</strong></div>
+<div class="v74Level"><span class="v74Tag">SUPPORT</span><div class="v74Bar"><i id="v74SupBar"></i></div><strong id="v74SupText">—</strong></div>
+</div>
+<div id="v74Gate" class="v74Gate v74Wait">📊 <b>GATE: WAIT</b> — waiting for confirmation.</div>
+<div class="v74Note">ℹ️ <b>Breakout rule:</b> a level break alone is not confirmation. The engine requires a 5M close beyond the level plus volume expansion and VWAP alignment. Otherwise it labels the move <b>FAKEOUT WATCH / WAIT</b>.</div>
 </section>
 <div id="topics">
 <section class="topic" id="topic-01">
@@ -12222,6 +12243,38 @@ updateProgress();
   }catch(e){reset();el("v73Bias").textContent="⚪ WAIT";el("v73Sub").textContent=e.message||"Data unavailable";el("v73Gate").className="v73Gate v73Wait";el("v73Gate").innerHTML="📊 <b>DECISION GATE: WAIT</b> — "+(e.message||"Required data unavailable.");status("🟠 WAIT • DATA UNAVAILABLE","bad")}
  };
  setTimeout(()=>{if(typeof window.loadSetup73==="function")window.loadSetup73()},2000);
+})();
+</script>
+<script>
+/* V74 LIQUIDITY + BREAKOUT CONFIRMATION */
+(function(){
+ const el=id=>document.getElementById(id),set=(id,v)=>{if(el(id))el(id).textContent=v};
+ const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:2}):"—";
+ function status(t,c){const x=el("v74Status");x.textContent=t;x.className="liveStatus "+(c||"")}
+ function reset(){["v74High","v74Low","v74VWAP","v74Price","v74Volume","v74Structure"].forEach(x=>set(x,"—"))}
+ window.loadLiquidity74=async function(){
+  const u=el("v74Underlying").value;status("⏳ ANALYZING…","");reset();
+  try{
+   const r=await fetch("/api/upstox/confluence?underlying="+encodeURIComponent(u)+"&interval=5",{cache:"no-store"});const d=await r.json();
+   if(!d.count||!d.chart_candles?.length)throw new Error(d.message||d.error||"No 5-minute candles returned");
+   const c=d.chart_candles, last=c[c.length-1], recent=c.slice(-8,-1), hi=Math.max(...recent.map(x=>Number(x.high))),lo=Math.min(...recent.map(x=>Number(x.low))),p=Number(last.close),v=Number(d.vwap);
+   const vol=Number(d.volume_ratio),volOK=Number.isFinite(vol)&&vol>=1.15, above=p>v, below=p<v;
+   const brokeUp=p>hi,brokeDown=p<lo;
+   const upConfirm=brokeUp&&volOK&&above,downConfirm=brokeDown&&volOK&&below;
+   const nearUp=Math.abs(p-hi)/(hi-lo||1)<.25,nearDown=Math.abs(p-lo)/(hi-lo||1)<.25;
+   let title="WAIT",sub="No confirmed breakout.",gate="📊 <b>GATE: WAIT</b> — no confirmed level break.";
+   if(upConfirm){title="🟢 UPSIDE BREAKOUT CONFIRMED";sub="5M close above recent high + volume expansion + price above VWAP.";gate="📊 <b>GATE: UPSIDE CONFIRMED</b> — evidence aligned."}
+   else if(downConfirm){title="🔴 DOWNSIDE BREAKDOWN CONFIRMED";sub="5M close below recent low + volume expansion + price below VWAP.";gate="📊 <b>GATE: DOWNSIDE CONFIRMED</b> — evidence aligned."}
+   else if((brokeUp||brokeDown)&&!volOK){title="🟡 FAKEOUT WATCH";sub="Level was crossed, but volume expansion is missing.";gate="📊 <b>GATE: WAIT</b> — breakout lacks volume confirmation."}
+   else if((nearUp&&above)||(nearDown&&below)){title="🟡 BREAKOUT WATCH";sub="Price is near a liquidity level; wait for a 5M close + volume confirmation.";gate="📊 <b>GATE: WAIT</b> — trigger not confirmed."}
+   set("v74Title",title);set("v74Sub",sub);set("v74High",nf(hi));set("v74Low",nf(lo));set("v74VWAP",nf(v));set("v74Price",nf(p));set("v74Volume",Number.isFinite(vol)?vol.toFixed(2)+"× • "+(d.volume_state||""):"Unavailable");set("v74Structure",d.structure_5m||"Unavailable");
+   set("v74ResText",nf(hi));set("v74SupText",nf(lo));set("v74PriceText",nf(p));
+   const span=Math.max(1,hi-lo);el("v74ResBar").style.width="100%";el("v74SupBar").style.width="100%";el("v74PriceBar").style.width=Math.min(100,Math.max(0,(p-lo)/span*100))+"%";
+   const ready=upConfirm||downConfirm;
+   el("v74Gate").className="v74Gate "+(ready?"v74Ready":"v74Wait");el("v74Gate").innerHTML=gate;status(ready?"🟢 CONFIRMED":"🟡 WAIT / WATCH",ready?"ok":"");
+  }catch(e){reset();set("v74Title","WAIT");set("v74Sub",e.message||"Data unavailable");el("v74Gate").className="v74Gate v74Wait";el("v74Gate").innerHTML="📊 <b>GATE: WAIT</b> — "+(e.message||"Required data unavailable.");status("🟠 WAIT • DATA UNAVAILABLE","bad")}
+ };
+ setTimeout(()=>{if(typeof window.loadLiquidity74==="function")window.loadLiquidity74()},2200);
 })();
 </script>
 </body></html>
