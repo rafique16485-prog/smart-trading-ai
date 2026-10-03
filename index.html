@@ -32,6 +32,16 @@
 .v71Box{padding:12px;border:1px solid #e4e7eb;border-radius:13px;background:#fff}.v71Box b{font-size:12px;color:#697586;display:block}.v71Box strong{display:block;margin-top:4px}
 .v71Gate{margin-top:12px;padding:14px;border-radius:14px}.v71Wait{background:#fff3e8;border:1px solid #ffd7ad}
 @media(max-width:600px){.v71Read{grid-template-columns:1fr}.v71Chart svg{min-height:250px}}
+</style><style id="v72Styles">
+.v72{margin-top:18px}.v72Head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.v72Tools{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.v72Tools select,.v72Tools button{min-height:44px}
+.v72Regime{padding:16px;border-radius:16px;border:1px solid #e4e7eb;background:#fff;margin-bottom:12px}
+.v72Regime strong{font-size:24px}.v72Grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.v72Box{padding:13px;border:1px solid #e4e7eb;border-radius:14px;background:#fff}.v72Box b{display:block;font-size:12px;color:#697586}.v72Box strong{display:block;margin-top:4px;font-size:17px}
+.v72Vol{margin-top:14px;padding:15px;border:1px solid #e4e7eb;border-radius:16px;background:#fff}
+.v72VolBar{height:20px;border-radius:99px;background:#edf0f3;overflow:hidden;margin:9px 0}.v72VolBar i{display:block;height:100%;width:0%;transition:width .25s}
+.v72Scale{display:flex;justify-content:space-between;font-size:11px;color:#697586}.v72Note{margin-top:12px;padding:13px;border-radius:13px;background:#f7f8fa}
+@media(max-width:700px){.v72Grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){.v72Grid{grid-template-columns:1fr}}
 </style></head><!DOCTYPE html>
 
 <html lang="hi"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
@@ -345,6 +355,24 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 <div class="v71Read"><div class="v71Box"><b>PRICE</b><strong id="v71Price">—</strong></div><div class="v71Box"><b>VWAP</b><strong id="v71VWAP">—</strong></div><div class="v71Box"><b>STRUCTURE</b><strong id="v71Structure">—</strong></div><div class="v71Box"><b>LAST CANDLE</b><strong id="v71Candle">—</strong></div><div class="v71Box"><b>VOLUME</b><strong id="v71Volume">—</strong></div><div class="v71Box"><b>CHART BARS</b><strong id="v71Bars">—</strong></div></div>
 <div id="v71Gate" class="v71Gate v71Wait">📊 <b>VISUAL GATE: WAIT</b> — waiting for live 5-minute candles.</div>
 <p class="small muted">This chart is a visual evidence tool, not a guaranteed trading signal. It does not place orders.</p>
+</section>
+<section id="marketRegime72" class="hero v72">
+<div class="v72Head"><div><h2>🧭 V72 — Market Regime + Volume Engine</h2><p class="muted">Trend / Range / Reversal Watch + volume state • 5-minute evidence</p></div><div id="v72Status" class="liveStatus">⏳ Loading…</div></div>
+<div class="v72Tools"><select id="v72Underlying"><option value="nifty">NIFTY 50</option><option value="banknifty">BANK NIFTY</option></select><button onclick="loadRegime72()">🧭 Analyze Regime</button></div>
+<div id="v72Regime" class="v72Regime">Market Regime: <strong id="v72RegimeText">—</strong><div class="small muted" id="v72RegimeReason">Waiting for 5-minute evidence…</div></div>
+<div class="v72Grid">
+<div class="v72Box"><b>PRICE</b><strong id="v72Price">—</strong></div>
+<div class="v72Box"><b>EMA 20</b><strong id="v72E20">—</strong></div>
+<div class="v72Box"><b>EMA 50</b><strong id="v72E50">—</strong></div>
+<div class="v72Box"><b>ATR 14</b><strong id="v72ATR">—</strong></div>
+<div class="v72Box"><b>5M STRUCTURE</b><strong id="v72Structure">—</strong></div>
+<div class="v72Box"><b>VWAP</b><strong id="v72VWAP">—</strong></div>
+<div class="v72Box"><b>VOLUME RATIO</b><strong id="v72VR">—</strong></div>
+<div class="v72Box"><b>VOLUME STATE</b><strong id="v72VS">—</strong></div>
+</div>
+<div class="v72Vol"><b>📊 Volume Bar</b><div id="v72VolText" class="small muted">—</div><div class="v72VolBar"><i id="v72VolFill"></i></div><div class="v72Scale"><span>LOW</span><span>NORMAL</span><span>ELEVATED</span><span>SPIKE</span></div></div>
+<div class="v72Note">ℹ️ <b>Educational regime engine:</b> classification uses recent 5M structure, EMA20/EMA50, ATR and price relationship. It is a heuristic, not a prediction.</div>
+<div id="v72Gate" class="v72Regime">📊 <b>GATE: WAIT</b> — required live data unavailable.</div>
 </section>
 <div id="topics">
 <section class="topic" id="topic-01">
@@ -12086,6 +12114,28 @@ updateProgress();
    catch(e){el("v71Svg").innerHTML='<text x="450" y="210" text-anchor="middle" font-size="18" fill="#697586">WAIT • '+esc(e.message||"Data unavailable")+'</text>';set("v71Price","—");set("v71VWAP","—");set("v71Structure","—");set("v71Candle","—");set("v71Volume","—");set("v71Bars","—");el("v71Gate").innerHTML="📊 <b>VISUAL GATE: WAIT</b> — "+esc(e.message||"Required 5-minute data unavailable.");status("🟠 WAIT • DATA UNAVAILABLE","bad");}
  };
  setTimeout(()=>{if(typeof window.loadVisualChart71==="function")window.loadVisualChart71()},1600);
+})();
+</script>
+<script>
+/* V72 MARKET REGIME + VOLUME ENGINE */
+(function(){
+ const el=id=>document.getElementById(id), set=(id,v)=>{if(el(id))el(id).textContent=v};
+ const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:2}):"—";
+ function status(t,c){const x=el("v72Status");x.textContent=t;x.className="liveStatus "+(c||"")}
+ window.loadRegime72=async function(){
+  const u=el("v72Underlying").value;status("⏳ ANALYZING…","");
+  try{
+   const r=await fetch("/api/upstox/confluence?underlying="+encodeURIComponent(u)+"&interval=5",{cache:"no-store"});const d=await r.json();
+   if(!d.count)throw new Error(d.message||d.error||"No 5-minute candles returned");
+   set("v72RegimeText",d.market_regime||"UNAVAILABLE");
+   set("v72RegimeReason",d.market_regime==="TREND UP"?"HH-HL + price above EMA20 + EMA20 above EMA50":d.market_regime==="TREND DOWN"?"LH-LL + price below EMA20 + EMA20 below EMA50":d.market_regime==="RANGE"?"Mixed structure + compressed EMA spread vs ATR":d.market_regime==="REVERSAL WATCH"?"Structure and EMA trend disagree": "Evidence is transitioning / insufficient for a clean regime.");
+   set("v72Price",nf(d.latest?.close));set("v72E20",nf(d.ema20));set("v72E50",nf(d.ema50));set("v72ATR",nf(d.atr14));set("v72Structure",d.structure_5m||"Unavailable");set("v72VWAP",nf(d.vwap));set("v72VR",d.volume_ratio==null?"Unavailable":nf(d.volume_ratio)+"×");set("v72VS",d.volume_state||"Unavailable");
+   const ratio=Number(d.volume_ratio);const pct=!Number.isFinite(ratio)?0:Math.min(100,Math.max(5,ratio/1.5*100));el("v72VolFill").style.width=pct+"%";set("v72VolText",d.volume_ratio==null?"Volume unavailable":nf(d.volume_ratio)+"× average • "+(d.volume_state||"UNKNOWN"));
+   el("v72Gate").innerHTML="📊 <b>GATE: "+(d.market_regime||"WAIT")+"</b> — "+(d.volume_state||"volume unavailable")+" volume state • "+(d.structure_5m||"structure unavailable");
+   status("🟢 REGIME LIVE","ok");
+  }catch(e){set("v72RegimeText","WAIT");set("v72RegimeReason",e.message||"Data unavailable");set("v72Price","—");set("v72E20","—");set("v72E50","—");set("v72ATR","—");set("v72Structure","—");set("v72VWAP","—");set("v72VR","—");set("v72VS","—");el("v72VolFill").style.width="0%";set("v72VolText","Volume unavailable");el("v72Gate").innerHTML="📊 <b>GATE: WAIT</b> — "+(e.message||"Required data unavailable.");status("🟠 WAIT • DATA UNAVAILABLE","bad")}
+ };
+ setTimeout(()=>{if(typeof window.loadRegime72==="function")window.loadRegime72()},1800);
 })();
 </script>
 </body></html>
