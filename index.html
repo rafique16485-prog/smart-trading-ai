@@ -56,7 +56,7 @@
 </style><style id="v75Styles">
 .v75{margin-top:18px}.v75Head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}.v75Tools{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.v75Tools select,.v75Tools button{min-height:44px}
 .v75Stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.v75Stat{padding:13px;border:1px solid #e4e7eb;border-radius:14px;background:#fff}.v75Stat b{display:block;font-size:11px;color:#697586}.v75Stat strong{display:block;margin-top:4px;font-size:18px}
-.v75Table{margin-top:14px;overflow:auto;border:1px solid #e4e7eb;border-radius:15px;background:#fff}.v75Table table{width:100%;border-collapse:collapse;min-width:980px}.v75Table th,.v75Table td{padding:10px 9px;border-bottom:1px solid #edf0f2;text-align:left;font-size:12px;white-space:nowrap}.v75Table th{background:#f7f8fa;color:#596579;position:sticky;top:0}.v75Score{font-weight:800}.v75Yes{font-weight:800}.v75No{color:#8b95a5}.v75News{max-width:260px;white-space:normal}.v75Note{margin-top:12px;padding:13px;border-radius:13px;background:#f7f8fa}
+.v75Table{margin-top:14px;overflow:auto;border:1px solid #e4e7eb;border-radius:15px;background:#fff}.v75Table table{width:100%;border-collapse:collapse;min-width:1700px}.v75Table th,.v75Table td{padding:10px 9px;border-bottom:1px solid #edf0f2;text-align:left;font-size:12px;white-space:nowrap}.v75Table th{background:#f7f8fa;color:#596579;position:sticky;top:0}.v75Score{font-weight:800}.v75Yes{font-weight:800}.v75No{color:#8b95a5}.v75News{max-width:260px;white-space:normal}.v75Note{margin-top:12px;padding:13px;border-radius:13px;background:#f7f8fa}
 @media(max-width:700px){.v75Stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head><!DOCTYPE html>
 
@@ -429,9 +429,9 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 </section>
 <section id="swingScanner75" class="hero v75">
 <div class="v75Head"><div><h2>🔎 V75 — AUTO SWING SCANNER</h2><p class="muted">NIFTY 100 + MIDCAP 100 • Breakout + Consolidation + Volume + RSI + Trend + News</p></div><div id="v75Status" class="liveStatus">⏳ Ready</div></div>
-<div class="v75Tools"><select id="v75Universe"><option value="both">NIFTY 100 + MIDCAP 100</option><option value="nifty100">NIFTY 100</option><option value="midcap100">NIFTY MIDCAP 100</option></select><button onclick="runSwingScanner75()">🔎 AUTO SCAN SWING</button></div>
+<div class="v75Tools"><label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700">Capital ₹ <input id="v75Capital" type="number" min="0" step="100" placeholder="Enter capital" style="min-width:130px;width:150px"></label><label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700">Risk % <input id="v75RiskPct" type="number" min="0.1" max="5" step="0.1" value="1" style="min-width:90px;width:90px"></label><select id="v75Universe"><option value="both">NIFTY 100 + MIDCAP 100</option><option value="nifty100">NIFTY 100</option><option value="midcap100">NIFTY MIDCAP 100</option></select><button onclick="runSwingScanner75()">🔎 AUTO SCAN SWING</button></div>
 <div class="v75Stats"><div class="v75Stat"><b>UNIVERSE</b><strong id="v75UniverseStat">—</strong></div><div class="v75Stat"><b>SHORTLIST</b><strong id="v75Shortlist">—</strong></div><div class="v75Stat"><b>BREAKOUTS</b><strong id="v75Breakouts">—</strong></div><div class="v75Stat"><b>HIGH VOLUME</b><strong id="v75HighVol">—</strong></div></div>
-<div class="v75Table"><table><thead><tr><th>Stock</th><th>Score /7</th><th>Price</th><th>RSI</th><th>Vol ×</th><th>Breakout</th><th>Consolidation</th><th>Trend</th><th>News</th><th>Govt/Event</th><th>Setup</th></tr></thead><tbody id="v75Body"><tr><td colspan="11">Press <b>AUTO SCAN SWING</b> after Upstox connection.</td></tr></tbody></table></div>
+<div class="v75Table"><table><thead><tr><th>Stock</th><th>Score /7</th><th>Price</th><th>RSI</th><th>Vol ×</th><th>Breakout</th><th>Consolidation</th><th>Trend</th><th>News</th><th>Govt/Event</th><th>Setup</th><th>Entry Zone</th><th>SL</th><th>T1</th><th>T2</th><th>R:R</th><th>Qty</th><th>Holding</th><th>WhatsApp</th></tr></thead><tbody id="v75Body"><tr><td colspan="11">Press <b>AUTO SCAN SWING</b> after Upstox connection.</td></tr></tbody></table></div>
 <div class="v75Note">ℹ️ <b>Scanner logic:</b> daily swing evidence uses prior 20-day high/low, 20-day consolidation range, current-vs-average volume, RSI(14), EMA20/EMA50 and recent news. News/government tags are keyword-based. FII/DII daily flow is <b>market-wide</b>, so it is not falsely attributed to individual stocks.</div>
 </section>
 <div id="topics">
@@ -12297,20 +12297,29 @@ updateProgress();
  const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:2}):"—";
  function status(t,c){const x=el("v75Status");x.textContent=t;x.className="liveStatus "+(c||"")}
  window.runSwingScanner75=async function(){
-  status("⏳ SCANNING…","");el("v75Body").innerHTML='<tr><td colspan="11">Scanning universe, technical structure and recent news…</td></tr>';
+  status("⏳ SCANNING…","");el("v75Body").innerHTML='<tr><td colspan="18">Scanning universe, technical structure, trade plan and recent news…</td></tr>';
   try{
    const u=el("v75Universe").value,r=await fetch("/api/upstox/swing-scanner?universe="+encodeURIComponent(u),{cache:"no-store"}),d=await r.json();
    if(!r.ok||d.error)throw new Error(d.error||"Scanner failed");
    set("v75UniverseStat",d.scanned);set("v75Shortlist",d.results.length);set("v75Breakouts",d.results.filter(x=>x.breakout).length);set("v75HighVol",d.results.filter(x=>x.volumeRatio>=1.5).length);
-   if(!d.results.length){el("v75Body").innerHTML='<tr><td colspan="11">No candidates met the technical evidence filter. This is a valid NO-TRADE result.</td></tr>';status("🟡 NO CLEAN SETUP","");return}
+   if(!d.results.length){el("v75Body").innerHTML='<tr><td colspan="18">No candidates met the technical evidence filter. This is a valid NO-TRADE result.</td></tr>';status("🟡 NO CLEAN SETUP","");return}
    el("v75Body").innerHTML=d.results.map(x=>{
     const setup=x.trigger?"🟢 WATCH / READY":"🟡 WATCH";
     const news=x.news==="NEWS"?x.newsImpact:"NONE";
     const gov=x.governmentLinked?"YES":"—";
-    return '<tr><td><b>'+esc(x.symbol)+'</b><br><small>'+esc((x.groups||[]).join(" + "))+'</small></td><td class="v75Score">'+esc(x.score)+'/7</td><td>'+esc(nf(x.ltp))+'</td><td>'+esc(nf(x.rsi))+'</td><td>'+esc(x.volumeRatio==null?"—":Number(x.volumeRatio).toFixed(2)+"×")+'</td><td class="'+(x.breakout?"v75Yes":"v75No")+'">'+(x.breakout?"YES":"—")+'</td><td class="'+(x.consolidation?"v75Yes":"v75No")+'">'+(x.consolidation?"YES":"—")+'</td><td class="'+(x.trend?"v75Yes":"v75No")+'">'+(x.trend?"UP":"—")+'</td><td class="v75News">'+esc(news)+(x.newsHeadlines?.length?'<br><small>'+esc(x.newsHeadlines[0])+'</small>':"")+'</td><td>'+gov+'</td><td><b>'+setup+'</b></td></tr>';
+    const cap=Number(el("v75Capital")?.value||0),riskPct=Number(el("v75RiskPct")?.value||1);
+    const qty=cap>0&&x.riskPerShare>0?Math.floor((cap*riskPct/100)/x.riskPerShare):null;
+    const q=qty&&qty>0?qty:"Enter capital";
+    const entry=(x.entryLow!=null&&x.entryHigh!=null)?nf(x.entryLow)+" – "+nf(x.entryHigh):"—";
+    const sl=x.invalidation!=null?nf(x.invalidation):"—";
+    const t1=x.target1!=null?nf(x.target1):"—";
+    const t2=x.target2!=null?nf(x.target2):"—";
+    const rr=x.riskPerShare>0?"1:1.5 / 1:2":"—";
+    const hold=x.holdingDays?x.holdingDays+" trading days":"—";
+    return '<tr><td><b>'+esc(x.symbol)+'</b><br><small>'+esc((x.groups||[]).join(" + "))+'</small></td><td class="v75Score">'+esc(x.score)+'/7</td><td>'+esc(nf(x.ltp))+'</td><td>'+esc(nf(x.rsi))+'</td><td>'+esc(x.volumeRatio==null?"—":Number(x.volumeRatio).toFixed(2)+"×")+'</td><td class="'+(x.breakout?"v75Yes":"v75No")+'">'+(x.breakout?"YES":"—")+'</td><td class="'+(x.consolidation?"v75Yes":"v75No")+'">'+(x.consolidation?"YES":"—")+'</td><td class="'+(x.trend?"v75Yes":"v75No")+'">'+(x.trend?"UP":"—")+'</td><td class="v75News">'+esc(news)+(x.newsHeadlines?.length?'<br><small>'+esc(x.newsHeadlines[0])+'</small>':"")+'</td><td>'+gov+'</td><td><b>'+setup+'</b></td><td>'+esc(entry)+'</td><td>'+esc(sl)+'</td><td>'+esc(t1)+'</td><td>'+esc(t2)+'</td><td>'+rr+'</td><td>'+esc(q)+'</td><td>'+esc(hold)+'</td></tr>';
    }).join("");
    status("🟢 SCAN COMPLETE","ok");
-  }catch(e){el("v75Body").innerHTML='<tr><td colspan="11">🟠 WAIT — '+esc(e.message||"Required data unavailable.")+'</td></tr>';status("🟠 SCAN UNAVAILABLE","bad")}
+  }catch(e){el("v75Body").innerHTML='<tr><td colspan="18">🟠 WAIT — '+esc(e.message||"Required data unavailable.")+'</td></tr>';status("🟠 SCAN UNAVAILABLE","bad")}
  };
 })();
 </script>
@@ -12342,6 +12351,13 @@ updateProgress();
       "News: "+(cells[8]||"—").replace(/\n/g," "),
       "Govt/Event: "+(cells[9]||"—"),
       "Setup: "+(cells[10]||"—"),
+      "Entry Zone: "+(cells[11]||"—"),
+      "Stop Loss: "+(cells[12]||"—"),
+      "Target 1: "+(cells[13]||"—"),
+      "Target 2: "+(cells[14]||"—"),
+      "R:R: "+(cells[15]||"—"),
+      "Quantity: "+(cells[16]||"—"),
+      "Holding: "+(cells[17]||"—"),
       "",
       "⚠️ Educational scanner output. Verify live price, entry, SL, target and risk before any trade."
     ].join("\n");
@@ -12353,7 +12369,7 @@ updateProgress();
     [...table.querySelectorAll("tr")].forEach(row=>{
       if(row.dataset.waAdded==="1")return;
       const cells=row.querySelectorAll("td");
-      if(!cells.length || cells.length<11)return;
+      if(!cells.length || cells.length<18)return;
       const td=document.createElement("td");
       const b=document.createElement("button");
       b.type="button";
@@ -12373,13 +12389,13 @@ updateProgress();
     b.textContent="📲 WhatsApp Share";
     b.style.cssText="background:#25D366;color:#fff";
     b.onclick=()=>{
-      const rows=[...el("v75Body").querySelectorAll("tr")].filter(r=>r.querySelectorAll("td").length>=11);
+      const rows=[...el("v75Body").querySelectorAll("tr")].filter(r=>r.querySelectorAll("td").length>=18);
       if(!rows.length){waOpen("📊 Smart Trading AI — Swing Scanner\n\nNo scan results available. Run AUTO SCAN SWING first.");return}
       const universe=el("v75Universe")?.selectedOptions?.[0]?.textContent||"Selected universe";
       const lines=["📊 Smart Trading AI — Swing Scanner","Universe: "+universe,""];
       rows.slice(0,10).forEach((r,i)=>{
         const cells=[...r.querySelectorAll("td")].map(x=>x.innerText.trim());
-        lines.push((i+1)+". "+(cells[0]||"—").replace(/\n/g," ")+" | Score "+(cells[1]||"—")+" | Price "+(cells[2]||"—")+" | RSI "+(cells[3]||"—")+" | Vol "+(cells[4]||"—")+" | "+(cells[10]||"—").replace(/\n/g," "));
+        lines.push((i+1)+". "+(cells[0]||"—").replace(/\n/g," ")+" | Score "+(cells[1]||"—")+" | Price "+(cells[2]||"—")+" | RSI "+(cells[3]||"—")+" | Vol "+(cells[4]||"—")+" | "+(cells[10]||"—").replace(/\n/g," ")+" | Entry "+(cells[11]||"—")+" | SL "+(cells[12]||"—")+" | T1 "+(cells[13]||"—")+" | T2 "+(cells[14]||"—")+" | Qty "+(cells[16]||"—"));
       });
       lines.push("","","⚠️ Educational scanner output. Verify live price, entry, SL, target and risk before any trade.");
       waOpen(lines.join("\n"));
