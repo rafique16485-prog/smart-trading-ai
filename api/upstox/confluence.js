@@ -96,6 +96,37 @@ module.exports = async (req, res) => {
     const candleBias = last.close > last.open ? "BULLISH" : last.close < last.open ? "BEARISH" : "NEUTRAL";
     const volumeSpike = volumeRatio != null && volumeRatio >= 1.5;
 
+    function ema(values, period){
+      if(values.length < period) return null;
+      const k=2/(period+1);
+      let e=values.slice(0,period).reduce((s,v)=>s+v,0)/period;
+      for(let i=period;i<values.length;i++) e=values[i]*k+e*(1-k);
+      return e;
+    }
+    function atr(values, period){
+      if(values.length < period+1) return null;
+      const trs=[];
+      for(let i=1;i<values.length;i++){
+        const c=values[i], p=values[i-1];
+        trs.push(Math.max(c.high-c.low,Math.abs(c.high-p.close),Math.abs(c.low-p.close)));
+      }
+      return trs.slice(-period).reduce((s,v)=>s+v,0)/Math.min(period,trs.length);
+    }
+    const closes=ordered.map(c=>c.close);
+    const ema20=ema(closes,20);
+    const ema50=ema(closes,50);
+    const atr14=atr(ordered,14);
+    const emaSpread=(ema20!=null&&ema50!=null&&atr14>0)?Math.abs(ema20-ema50)/atr14:null;
+    let marketRegime="INSUFFICIENT DATA";
+    if(ema20!=null&&ema50!=null&&atr14!=null){
+      if(structure==="HH-HL" && last.close>ema20 && ema20>ema50) marketRegime="TREND UP";
+      else if(structure==="LH-LL" && last.close<ema20 && ema20<ema50) marketRegime="TREND DOWN";
+      else if(emaSpread<0.35 && structure==="MIXED") marketRegime="RANGE";
+      else if((structure==="HH-HL" && ema20<ema50) || (structure==="LH-LL" && ema20>ema50)) marketRegime="REVERSAL WATCH";
+      else marketRegime="TRANSITION";
+    }
+    const volumeState=volumeRatio==null?"UNAVAILABLE":volumeRatio>=1.5?"SPIKE":volumeRatio>=1.15?"ELEVATED":volumeRatio>=0.85?"NORMAL":"LOW";
+
     return res.status(200).json({
       connected: true,
       source: "Upstox V3 Intraday Candles",
@@ -110,6 +141,12 @@ module.exports = async (req, res) => {
       candle_bias: candleBias,
       volume_ratio: volumeRatio,
       volume_spike: volumeSpike,
+      volume_state: volumeState,
+      ema20,
+      ema50,
+      atr14,
+      ema_spread_atr: emaSpread,
+      market_regime: marketRegime,
       chart_candles: ordered.slice(-60)
     });
   } catch (e) {
