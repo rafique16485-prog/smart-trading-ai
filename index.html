@@ -12480,4 +12480,13 @@ updateProgress();
  if(typeof old==="function")window.runSwingScanner75=async function(){const x=await old.apply(this,arguments);setTimeout(refresh,150);return x};
  setTimeout(add,800);
 })();
+</script><script>
+/* V79 FINANCIAL QUALITY + EARNINGS CONTEXT */
+(function(){
+ const E=id=>document.getElementById(id);
+ const esc=v=>String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+ function mount(){const b=E("v78Summary");if(!b||E("v79Summary"))return;const d=document.createElement("div");d.id="v79Summary";d.style.cssText="margin-top:12px;padding:14px;border:1px solid #dbe3ec;border-radius:14px;background:#fff";d.innerHTML='<b>📊 V79 — Financial Quality + Earnings Context</b><div id="v79Text" class="small" style="margin-top:7px">Run the swing scanner to load financial context for the technical shortlist.</div>';b.parentNode.insertBefore(d,b.nextSibling)}
+ async function load(){mount();const o=E("v79Text");if(!o)return;try{const u=E("v75Universe")?.value||"both";const r=await fetch("/api/upstox/swing-scanner?universe="+encodeURIComponent(u),{cache:"no-store"}),d=await r.json(),a=(d.results||[]).filter(x=>x.fundamentals&&!x.fundamentals.error).slice(0,5);if(!a.length){o.textContent="Financial data unavailable for this scan.";return}o.innerHTML=a.map(x=>{const q=x.fundamentals.quality||{},rs=q.ratios?.data||q.ratios||[];const m={};rs.forEach(z=>m[String(z.name||"").toUpperCase()]=z.company_value);return "<div style='padding:8px 0;border-bottom:1px solid #edf0f2'><b>"+esc(x.symbol)+"</b> — Revenue "+esc(q.revenueGrowth||"—")+" | Net Profit "+esc(q.netProfitGrowth||"—")+" | ROE "+esc(m.ROE||"—")+" | ROCE "+esc(m.ROCE||"—")+"<br><small>Assets: "+esc(q.totalAssets??"—")+" Cr • Liabilities: "+esc(q.totalLiability??"—")+" Cr • Financials are context, not a trade trigger.</small></div>"}).join("")}catch(e){o.textContent="V79 unavailable — "+(e.message||"try again.")}}
+ const old=window.runSwingScanner75;if(typeof old==="function")window.runSwingScanner75=async function(){const z=await old.apply(this,arguments);setTimeout(load,250);return z};setTimeout(mount,1000);
+})();
 </script></body></html>
