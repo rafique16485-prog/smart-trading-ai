@@ -231,12 +231,29 @@ module.exports=async(req,res)=>{
         fundMap[x.isin]={shareholding:{promoter:p?.value??null,fii:fi?.value??null,dii:di?.value??null,promoterChange:pp&&p?p.value-pp.value:null,fiiChange:fp&&fi?fi.value-fp.value:null,diiChange:dp&&di?di.value-dp.value:null,period:p?.period||fi?.period||di?.period||null},corporateActions:actions.slice(0,3).map(a=>({name:a.name,expiry_date:a.expiry_date,amount:a.amount,ratio:a.ratio})),ratios,quality,qualityFlags};
       }catch(e){fundMap[x.isin]={error:e.message||"Fundamentals unavailable"}}
     }));
+    // V80 composite score: descriptive decision gate, not a prediction
+    const finalScore=(x)=>{
+      let s=0;
+      if(x.breakout)s+=2;
+      if(x.volumeUp)s+=2;
+      if(x.rsiOK)s+=1;
+      if(x.trend)s+=1;
+      if(x.relativeStrength!=null && x.relativeStrength>0)s+=1;
+      if(x.sectorAvgReturn!=null && x.sectorAvgReturn>0)s+=1;
+      const q=x.fundamentals?.quality||{};
+      if(q.revenueGrowth!=null && Number(q.revenueGrowth)>0)s+=1;
+      if(q.netProfitGrowth!=null && Number(q.netProfitGrowth)>0)s+=1;
+      const news=x.news?.flag;
+      if(news==="NEGATIVE")s-=2;
+      if(news==="MIXED")s-=1;
+      return s;
+    };
     const results=scored.map(x=>{
       const ni=newsImpact(newsMap[x.key]||[]);
       const sector=sectorStats[x.industry||"UNKNOWN"]||{avgReturn:0,count:0,breakouts:0};
       const relativeStrength=benchmarkReturn!=null&&x.changePct!=null?x.changePct-benchmarkReturn:null;
       const fund=fundMap[x.isin]||{};
-      return {...x,fundamentals:fund,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading)};
+      const composite=finalScore({...x,fundamentals:fund,sectorAvgReturn:sector.avgReturn,relativeStrength});,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,compositeScore:composite,decisionGate:composite>=9?"READY":composite>=6?"WATCH":composite<=2?"AVOID":"WAIT",newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading)};
     });
     return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,benchmark:{name:"NIFTY 50",returnPct:benchmarkReturn},institutional:fiiDii,sectorStats,results,tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
       volume:"Today volume / prior 20 completed daily bars",
