@@ -11574,4 +11574,67 @@ updateProgress();
 })();
 </script>
 
+
+<script>
+/* OPTION CHAIN V67 JS */
+(function(){
+  const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:2}):"—";
+  const nfi=v=>typeof v==="number"?Math.round(v).toLocaleString("en-IN"):"—";
+  const el=id=>document.getElementById(id);
+  function status(t,cls){const x=el("oc67Status");x.textContent=t;x.className="liveStatus "+(cls||"");}
+  function cell(v,cls){return '<td class="'+(cls||"")+'">'+(typeof v==="number"?nf(v):"—")+'</td>'}
+  window.loadOptionChain67=async function(){
+    const underlying=el("oc67Underlying").value;
+    const expiry=el("oc67Expiry").value.trim()||"current_week";
+    el("oc67Error").style.display="none";
+    el("oc67Body").innerHTML='<tr><td colspan="9" style="text-align:center;padding:18px">⏳ Loading…</td></tr>';
+    status("⏳ Loading…","");
+    try{
+      let r=await fetch("/api/upstox/option-chain?underlying="+encodeURIComponent(underlying)+"&expiry="+encodeURIComponent(expiry),{cache:"no-store"});
+      let d=await r.json();
+      if(!d.connected) throw new Error("Upstox not connected");
+      if(!d.chain || !d.chain.length){
+        if(expiry==="current_week"){
+          r=await fetch("/api/upstox/option-chain?underlying="+encodeURIComponent(underlying)+"&expiry=next_week",{cache:"no-store"});
+          d=await r.json();
+          if(d.chain && d.chain.length) el("oc67Expiry").value="next_week";
+        }
+      }
+      if(!d.chain || !d.chain.length) throw new Error(d.message||"No option-chain rows returned");
+      status("🟢 LIVE • OPTION CHAIN","ok");
+      el("oc67Spot").textContent=nf(d.spot);
+      el("oc67ATM").textContent=nfi(d.atm_strike);
+      const pcr=typeof d.full_chain?.pcr==="number"?d.full_chain.pcr:(typeof d.atm_window?.pcr==="number"?d.atm_window.pcr:null);
+      el("oc67PCR").textContent=pcr==null?"—":pcr.toFixed(3);
+      let maxCE=d.chain.reduce((a,x)=>(x.ce?.oi||0)>(a.ce?.oi||0)?x:a,d.chain[0]);
+      let maxPE=d.chain.reduce((a,x)=>(x.pe?.oi||0)>(a.pe?.oi||0)?x:a,d.chain[0]);
+      el("oc67Support").textContent=nfi(maxPE.strike);
+      el("oc67Resistance").textContent=nfi(maxCE.strike);
+      el("oc67Body").innerHTML=d.chain.map(x=>{
+        const atm=Number(x.strike)===Number(d.atm_strike)?"oc67Atm":"";
+        const c=x.ce||{},p=x.pe||{};
+        return '<tr class="'+atm+'">'+cell(c.ltp,"oc67Call")+cell(c.oi,"oc67Call")+cell(c.oi_change,"oc67Call")+
+          '<td style="text-align:center"><b>'+nf(x.strike)+'</b></td>'+
+          cell(p.oi_change,"oc67Put")+cell(p.oi,"oc67Put")+cell(p.ltp,"oc67Put")+
+          '<td>'+nf(c.volume)+' / '+nf(p.volume)+'</td><td>'+nf(c.iv)+' / '+nf(p.iv)+'</td></tr>';
+      }).join("");
+      const atmRow=d.chain.find(x=>Number(x.strike)===Number(d.atm_strike))||d.chain[Math.floor(d.chain.length/2)];
+      const ceChange=atmRow?.ce?.oi_change||0,peChange=atmRow?.pe?.oi_change||0;
+      let verdict="WAIT",reason="OI evidence mixed";
+      if((ceChange<0&&peChange>0)&&(pcr!=null&&pcr>=0.9)){verdict="CALL";reason="ATM CE OI falling + PE OI rising + PCR supportive";}
+      else if((peChange<0&&ceChange>0)&&(pcr!=null&&pcr<=1.1)){verdict="PUT";reason="ATM PE OI falling + CE OI rising + PCR not strongly supportive";}
+      else if(Math.abs(ceChange-peChange)<Math.max(1,Math.abs(ceChange)*0.15)){reason="ATM OI changes are too close";}
+      el("oc67Verdict").innerHTML="📊 <b>Educational data bias: "+verdict+"</b> • "+reason+
+        '<br><small>Rule-based display only; option-chain data alone is not a trading guarantee. Confirm with price action, VWAP, volume and risk rules before any decision.</small>';
+    }catch(e){
+      status("🟠 Data unavailable","bad");
+      el("oc67Body").innerHTML='<tr><td colspan="9" style="text-align:center;padding:18px">No data</td></tr>';
+      el("oc67Error").textContent=e.message||"Option chain fetch failed. Check Upstox connection or expiry.";
+      el("oc67Error").style.display="block";
+    }
+  };
+  setTimeout(loadOptionChain67,400);
+})();
+</script>
+
 </body></html>
