@@ -89,6 +89,19 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 @media(max-width:800px){.sm68Grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sm68Bars{grid-template-columns:1fr}}
 </style>
 
+
+<style>
+/* V69 CONFLUENCE ENGINE */
+.c69{border:2px solid #dbeafe;background:linear-gradient(180deg,#fff 0%,#f8fbff 100%)}
+.c69grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:12px 0}
+.c69card{background:#fff;border:1px solid #dbe3ec;border-radius:13px;padding:12px}
+.c69card b{display:block;font-size:12px;color:#667085}.c69card strong{display:block;font-size:18px;margin-top:4px}
+.c69ok{color:#166534}.c69bad{color:#991b1b}.c69wait{color:#92400e}
+.c69score{font-size:28px;font-weight:900}.c69bar{height:14px;background:#e5e7eb;border-radius:99px;overflow:hidden}.c69bar i{display:block;height:100%;width:0;background:#334155}
+.c69list{padding-left:20px}.c69list li{margin:5px 0}
+@media(max-width:900px){.c69grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:430px){.c69grid{grid-template-columns:1fr}}
+</style>
 </style>
 
 </head>
@@ -211,6 +224,42 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
   <div class="sm68Foot"><b>How V68 reads OI:</b> OI ↑ + premium ↓ = possible writing; OI ↓ + premium ↑ = possible short covering/unwinding. This is an inference from supplied chain data, not proof of trader intent.</div>
 </section>
 
+
+<section id="confluence69" class="hero c69">
+ <div class="liveHead">
+  <div><h2>🎯 V69 — Price Action + VWAP + OI + Volume Confluence</h2>
+  <p class="muted">5-minute evidence engine • No-data → WAIT • Educational decision gate</p></div>
+  <div id="c69Status" class="liveStatus">⏳ Loading confluence…</div>
+ </div>
+ <div class="toolbar">
+  <select id="c69Underlying" style="padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px">
+   <option value="nifty">NIFTY 50</option><option value="banknifty">BANK NIFTY</option>
+  </select>
+  <button onclick="loadConfluence69()">🔄 Analyze 5M</button>
+ </div>
+ <div class="c69grid">
+  <div class="c69card"><b>PRICE vs VWAP</b><strong id="c69VWAP">—</strong></div>
+  <div class="c69card"><b>5M STRUCTURE</b><strong id="c69Structure">—</strong></div>
+  <div class="c69card"><b>LAST CANDLE</b><strong id="c69Candle">—</strong></div>
+  <div class="c69card"><b>VOLUME</b><strong id="c69Volume">—</strong></div>
+  <div class="c69card"><b>OI / PCR</b><strong id="c69OI">—</strong></div>
+ </div>
+ <div class="card">
+  <b>CONFLUENCE SCORE</b>
+  <div class="c69score" id="c69Score">—</div>
+  <div class="c69bar"><i id="c69Bar"></i></div>
+  <p id="c69Reason" class="small">Waiting for live evidence…</p>
+ </div>
+ <ul class="c69list">
+  <li><b>Price/VWAP:</b> <span id="c69F1">—</span></li>
+  <li><b>5M Structure:</b> <span id="c69F2">—</span></li>
+  <li><b>Volume:</b> <span id="c69F3">—</span></li>
+  <li><b>Option OI:</b> <span id="c69F4">—</span></li>
+  <li><b>PCR:</b> <span id="c69F5">—</span></li>
+ </ul>
+ <div id="c69Verdict" class="c69card c69wait">📊 FINAL: WAIT — insufficient confluence.</div>
+ <p class="small muted">V69 is a rule-based evidence display, not a guaranteed trading signal. It does not invent missing VWAP/candle/volume data.</p>
+</section>
 <div id="topics">
 <section class="topic" id="topic-01">
 <div class="topic-head"><span class="num">01</span><div><h2>Trading Basics</h2><p class="muted">Capital, liquidity, timeframe, orders, risk और trading process.</p></div></div>
@@ -11781,4 +11830,60 @@ updateProgress();
 })();
 </script>
 
+
+<script>
+/* V69 CONFLUENCE ENGINE */
+(function(){
+ const el=id=>document.getElementById(id);
+ const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:2}):"—";
+ const set=(id,v)=>{if(el(id))el(id).textContent=v};
+ function badge(t,cls){const x=el("c69Status");x.textContent=t;x.className="liveStatus "+(cls||"")}
+ window.loadConfluence69=async function(){
+  const u=el("c69Underlying").value; badge("⏳ Loading…","");
+  try{
+   const [cr,or]=await Promise.all([
+    fetch("/api/upstox/confluence?underlying="+encodeURIComponent(u)+"&interval=5",{cache:"no-store"}),
+    fetch("/api/upstox/option-chain?underlying="+encodeURIComponent(u)+"&expiry=current_week",{cache:"no-store"})
+   ]);
+   const cd=await cr.json(); let od=await or.json();
+   if(!od.chain?.length){
+    od=await (await fetch("/api/upstox/option-chain?underlying="+encodeURIComponent(u)+"&expiry=next_week",{cache:"no-store"})).json();
+   }
+   if(!cd.count){throw new Error(cd.message||cd.error||"No 5-minute candles returned");}
+   set("c69VWAP",cd.vwap==null?"Unavailable":(cd.above_vwap?"ABOVE":"BELOW")+" • "+nf(cd.vwap));
+   set("c69Structure",cd.structure_5m||"Unavailable");
+   set("c69Candle",cd.candle_bias||"Unavailable");
+   set("c69Volume",cd.volume_ratio==null?"Unavailable":nf(cd.volume_ratio)+"× avg"+(cd.volume_spike?" • SPIKE":""));
+   const pcr=typeof od.full_chain?.pcr==="number"?od.full_chain.pcr:null;
+   set("c69OI",od.chain?.length?"Loaded":"Unavailable"); set("c69F5",pcr==null?"Unavailable":pcr.toFixed(3));
+   const f1=cd.above_vwap==null?0:(cd.above_vwap?1:-1);
+   const f2=cd.structure_5m==="HH-HL"?1:cd.structure_5m==="LH-LL"?-1:0;
+   const f3=cd.candle_bias==="BULLISH"?1:cd.candle_bias==="BEARISH"?-1:0;
+   const f4=cd.volume_spike?(cd.candle_bias==="BULLISH"?1:cd.candle_bias==="BEARISH"?-1:0):0;
+   const pe=od.chain?.reduce((s,x)=>s+Math.max(0,Number(x.pe?.oi_change||0)),0)||0;
+   const ce=od.chain?.reduce((s,x)=>s+Math.max(0,Number(x.ce?.oi_change||0)),0)||0;
+   const f5=ce>pe*1.15?-1:pe>ce*1.25?1:0;
+   const score=f1+f2+f3+f4+f5;
+   const confidence=Math.round(Math.abs(score)/5*100);
+   set("c69Score",score>0?"Bullish evidence • "+confidence+"%":score<0?"Bearish evidence • "+confidence+"%":"Mixed • 0%");
+   el("c69Bar").style.width=confidence+"%";
+   set("c69F1",f1>0?"Above VWAP":f1<0?"Below VWAP":"Neutral/Unavailable");
+   set("c69F2",cd.structure_5m||"Unavailable");
+   set("c69F3",cd.volume_spike?(cd.candle_bias||"")+" volume spike":cd.volume_ratio==null?"Unavailable":"No spike");
+   set("c69F4",f5>0?"Put-side OI addition dominates":f5<0?"Call-side OI addition dominates":"Mixed OI");
+   let verdict="WAIT",reason="Evidence does not align strongly enough.";
+   if(score>=4) {verdict="BULLISH CONFLUENCE";reason="At least 4 of 5 evidence factors align bullishly."}
+   else if(score<=-4){verdict="BEARISH CONFLUENCE";reason="At least 4 of 5 evidence factors align bearishly."}
+   const v=el("c69Verdict"); v.className="c69card "+(verdict==="WAIT"?"c69wait":verdict.includes("BULL")?"c69ok":"c69bad");
+   v.innerHTML="📊 <b>FINAL: "+verdict+"</b> — "+reason;
+   badge("🟢 CONFLUENCE LIVE","ok");
+  }catch(e){
+   badge("🟠 WAIT • DATA UNAVAILABLE","bad");
+   el("c69Verdict").className="c69card c69wait";
+   el("c69Verdict").innerHTML="📊 <b>FINAL: WAIT</b> — "+(e.message||"Required data unavailable.");
+  }
+ };
+ setTimeout(loadConfluence69,900);
+})();
+</script>
 </body></html>
