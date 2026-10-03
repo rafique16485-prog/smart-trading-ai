@@ -33,7 +33,25 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 .visual svg rect{fill:#ffffff;stroke:#334155;stroke-width:2.5}
 .visual svg path{stroke-linecap:round;stroke-linejoin:round}
 .visual svg circle{stroke:#111827;stroke-width:2}
-</style></head>
+</style>
+<style>
+#liveMarket{border:2px solid #dbeafe;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%)}
+.liveHead{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
+.liveStatus{padding:7px 11px;border-radius:999px;background:#fef3c7;color:#92400e;font-weight:800;font-size:13px}
+.liveStatus.ok{background:#dcfce7;color:#166534}
+.liveStatus.bad{background:#fee2e2;color:#991b1b}
+.liveGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:16px}
+.liveCard{background:#fff;border:1px solid #dbe3ec;border-radius:16px;padding:16px;box-shadow:0 3px 10px rgba(15,23,42,.06)}
+.liveName{font-weight:800;color:#475467;font-size:14px}
+.livePrice{font-size:28px;font-weight:900;margin-top:5px;letter-spacing:-.5px}
+.liveMeta{font-size:12px;color:#667085;margin-top:5px}
+.vixCard{border-color:#ddd6fe}
+.liveFooter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;color:#667085;font-size:13px}
+@media(max-width:800px){.liveGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.livePrice{font-size:23px}}
+@media(max-width:430px){.liveGrid{grid-template-columns:1fr}}
+</style>
+
+</head>
 <body>
 <header><div class="wrap" style="padding:0">
 <div class="small">TRADING LEARNING AI • V8 • VISUAL CHART LAB</div>
@@ -55,6 +73,29 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 <div class="toolbar"><input id="search" oninput="filterTopics()" placeholder="🔎 topic खोजें..."/><button onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆ Top</button></div>
 <div class="progress"><i id="bar"></i></div><p class="small" id="progtext">0/12 lessons completed</p>
 </section>
+
+<section id="liveMarket" class="hero" style="margin-top:18px">
+  <div class="liveHead">
+    <div>
+      <h2>📡 Smart Trading AI — Live Market</h2>
+      <p class="muted">Upstox V3 • Server-side secure connection • Educational dashboard</p>
+    </div>
+    <div class="liveStatus" id="liveStatus">⏳ Checking connection…</div>
+  </div>
+  <div class="liveGrid">
+    <div class="liveCard"><div class="liveName">NIFTY 50</div><div class="livePrice" id="liveNifty">—</div><div class="liveMeta" id="liveNiftyMeta">Waiting…</div></div>
+    <div class="liveCard"><div class="liveName">BANK NIFTY</div><div class="livePrice" id="liveBank">—</div><div class="liveMeta" id="liveBankMeta">Waiting…</div></div>
+    <div class="liveCard"><div class="liveName">SENSEX</div><div class="livePrice" id="liveSensex">—</div><div class="liveMeta" id="liveSensexMeta">Waiting…</div></div>
+    <div class="liveCard vixCard"><div class="liveName">INDIA VIX</div><div class="livePrice" id="liveVix">—</div><div class="liveMeta" id="liveVixMeta">Waiting…</div></div>
+  </div>
+  <div class="liveFooter">
+    <span id="liveUpdated">Last update: —</span>
+    <button onclick="refreshLiveMarket()">🔄 Refresh</button>
+    <span class="small">Auto-refresh: 15 sec</span>
+  </div>
+  <p id="liveError" class="danger small" style="display:none"></p>
+</section>
+
 <div id="topics">
 <section class="topic" id="topic-01">
 <div class="topic-head"><span class="num">01</span><div><h2>Trading Basics</h2><p class="muted">Capital, liquidity, timeframe, orders, risk और trading process.</p></div></div>
@@ -11416,4 +11457,55 @@ function saveJournal(){localStorage.setItem('tla_v8_journal',document.getElement
 function loadJournal(){document.getElementById('jtext').value=localStorage.getItem('tla_v8_journal')||'';document.getElementById('jmsg').textContent=' ✓ Loaded'}
 function calcRisk(){let c=+cap.value,r=+riskpct.value,e=+entry.value,s=+stop.value;let ra=c*r/100,d=Math.abs(e-s),q=d?Math.floor(ra/d):0;document.getElementById('riskout').innerHTML='<b>Risk budget:</b> ₹'+ra.toFixed(2)+'<br><b>Stop distance:</b> ₹'+d.toFixed(2)+'<br><b>Theoretical quantity:</b> '+q+' shares<br><span class="small">Fees, taxes, slippage and gap risk are not included.</span>'}
 updateProgress();
-</script></body></html>
+</script>
+<script>
+(function(){
+  const map = {
+    "NSE_INDEX:Nifty 50": ["liveNifty","liveNiftyMeta"],
+    "NSE_INDEX:Nifty Bank": ["liveBank","liveBankMeta"],
+    "BSE_INDEX:SENSEX": ["liveSensex","liveSensexMeta"],
+    "NSE_INDEX:India VIX": ["liveVix","liveVixMeta"]
+  };
+  function fmt(v){ return typeof v==="number" ? v.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—"; }
+  function setStatus(text, cls){
+    const el=document.getElementById("liveStatus");
+    el.textContent=text; el.className="liveStatus "+(cls||"");
+  }
+  window.refreshLiveMarket = async function(){
+    const err=document.getElementById("liveError");
+    err.style.display="none";
+    try{
+      const s=await fetch("/api/upstox/status",{cache:"no-store"});
+      const sj=await s.json();
+      if(!sj.connected){
+        setStatus("🔴 Upstox not connected","bad");
+        err.textContent="Upstox connection नहीं है. पहले Login/Connect करें.";
+        err.style.display="block";
+        return;
+      }
+      setStatus("🟢 LIVE • UPSTOX","ok");
+      const q=await fetch("/api/upstox/quote",{cache:"no-store"});
+      const data=await q.json();
+      if(!q.ok || !data.connected) throw new Error(data.error||"Quote unavailable");
+      (data.quotes||[]).forEach(x=>{
+        const ids=map[x.instrument_key];
+        if(!ids) return;
+        document.getElementById(ids[0]).textContent=fmt(x.last_price);
+        const pc=typeof x.prev_close_price==="number" ? "Prev close "+fmt(x.prev_close_price) : "";
+        const hl=(typeof x.high==="number"&&typeof x.low==="number") ? " • H "+fmt(x.high)+" • L "+fmt(x.low) : "";
+        document.getElementById(ids[1]).textContent=pc+hl;
+      });
+      const now=new Date();
+      document.getElementById("liveUpdated").textContent="Last update: "+now.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    }catch(e){
+      setStatus("🟠 Data unavailable","bad");
+      err.textContent="Live quote fetch failed. Please refresh or reconnect Upstox.";
+      err.style.display="block";
+    }
+  };
+  refreshLiveMarket();
+  setInterval(refreshLiveMarket,15000);
+})();
+</script>
+
+</body></html>
