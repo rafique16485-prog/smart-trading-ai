@@ -71,6 +71,24 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 @media(max-width:800px){.oc67Summary{grid-template-columns:repeat(2,minmax(0,1fr))}.oc67Stat strong{font-size:17px}}
 </style>
 
+
+<style>
+/* SMART MONEY OI ANALYZER V68 */
+.sm68{border:2px solid #e2e8f0;background:linear-gradient(180deg,#fff 0%,#f8fafc 100%)}
+.sm68Grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+.sm68Card{background:#fff;border:1px solid #dbe3ec;border-radius:13px;padding:13px}
+.sm68Card b{display:block;font-size:12px;color:#667085}.sm68Card strong{display:block;font-size:18px;margin-top:4px}
+.sm68Signal{font-weight:900}
+.sm68Bull{color:#166534}.sm68Bear{color:#991b1b}.sm68Wait{color:#92400e}
+.sm68Bars{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.sm68BarBox{border:1px solid #e2e8f0;border-radius:12px;padding:12px;background:#fff}
+.sm68Bar{height:13px;border-radius:99px;background:#e5e7eb;overflow:hidden;margin-top:7px}
+.sm68Bar i{display:block;height:100%;width:0;background:#334155}
+.sm68List{margin:10px 0 0;padding-left:20px}.sm68List li{margin:5px 0}
+.sm68Foot{margin-top:12px;padding:12px;border-radius:12px;background:#f8fafc;border:1px solid #cbd5e1;font-size:13px}
+@media(max-width:800px){.sm68Grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sm68Bars{grid-template-columns:1fr}}
+</style>
+
 </style>
 
 </head>
@@ -156,6 +174,41 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
   </div>
   <div id="oc67Verdict" class="oc67Verdict">Waiting for option-chain data…</div>
   <p id="oc67Error" class="danger small" style="display:none"></p>
+</section>
+
+
+<section id="smartMoney68" class="hero sm68">
+  <div class="oc67Head">
+    <div>
+      <h2>🧠 Smart Money OI Analyzer V68</h2>
+      <p class="muted">Rule-based reading of the loaded option chain — writing, unwinding, OI shift, PCR and market bias.</p>
+    </div>
+    <div id="sm68Status" class="liveStatus">⏳ Waiting for option chain…</div>
+  </div>
+  <div class="sm68Grid">
+    <div class="sm68Card"><b>CE WRITING</b><strong id="sm68CEWrite">—</strong></div>
+    <div class="sm68Card"><b>PE WRITING</b><strong id="sm68PEWrite">—</strong></div>
+    <div class="sm68Card"><b>CE UNWINDING</b><strong id="sm68CEUnwind">—</strong></div>
+    <div class="sm68Card"><b>PE UNWINDING</b><strong id="sm68PEUnwind">—</strong></div>
+  </div>
+  <div class="sm68Bars">
+    <div class="sm68BarBox">
+      <b>CALL-SIDE OI PRESSURE</b><div class="sm68Bar"><i id="sm68CEBar"></i></div>
+      <div class="small" id="sm68CEText">—</div>
+    </div>
+    <div class="sm68BarBox">
+      <b>PUT-SIDE OI SUPPORT</b><div class="sm68Bar"><i id="sm68PEBar"></i></div>
+      <div class="small" id="sm68PEText">—</div>
+    </div>
+  </div>
+  <ul class="sm68List">
+    <li><b>Dominant OI action:</b> <span id="sm68Action">—</span></li>
+    <li><b>OI shift:</b> <span id="sm68Shift">—</span></li>
+    <li><b>PCR:</b> <span id="sm68PCR">—</span></li>
+    <li><b>Key Support:</b> <span id="sm68Support">—</span> &nbsp; <b>Key Resistance:</b> <span id="sm68Resistance">—</span></li>
+  </ul>
+  <div id="sm68Verdict" class="sm68Foot sm68Wait">📊 Bias: WAIT — waiting for option-chain evidence.</div>
+  <div class="sm68Foot"><b>How V68 reads OI:</b> OI ↑ + premium ↓ = possible writing; OI ↓ + premium ↑ = possible short covering/unwinding. This is an inference from supplied chain data, not proof of trader intent.</div>
 </section>
 
 <div id="topics">
@@ -11634,6 +11687,97 @@ updateProgress();
     }
   };
   setTimeout(loadOptionChain67,400);
+})();
+</script>
+
+
+<script>
+/* SMART MONEY OI ANALYZER V68 */
+(function(){
+  const el=id=>document.getElementById(id);
+  const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:0}):"—";
+  const pct=v=>Math.max(0,Math.min(100,v)).toFixed(0)+"%";
+  const set=id=>v=>{if(el(id))el(id).textContent=v};
+  function classify(side){
+    const oi=Number(side?.oi||0), ch=Number(side?.oi_change||0), ltp=Number(side?.ltp||0);
+    const prev=ltp>0 ? ltp : 0;
+    /* With no prior premium in the API response, classify only from OI + current premium
+       direction when a relative comparison is available in the chain window. */
+    return {oi,ch,ltp,prev};
+  }
+  window.runSmartMoney68=function(d){
+    if(!d || !d.chain || !d.chain.length) return;
+    const rows=d.chain;
+    let ceWrite=0,peWrite=0,ceUn=0,peUn=0,cePressure=0,peSupport=0;
+    let ceTotal=0,peTotal=0;
+    rows.forEach(x=>{
+      const c=classify(x.ce),p=classify(x.pe);
+      ceTotal+=Math.max(0,c.oi_change); peTotal+=Math.max(0,p.oi_change);
+      /*
+       * OI-only inference:
+       * CE OI increase = call-side addition; PE OI increase = put-side addition.
+       * Direction of premium cannot be proven from one snapshot, so labels below
+       * use "OI build-up" rather than claiming definite writing.
+       */
+      if(c.ch>0){ceWrite+=c.ch;cePressure+=c.ch}
+      if(p.ch>0){peWrite+=p.ch;peSupport+=p.ch}
+      if(c.ch<0)ceUn+=Math.abs(c.ch);
+      if(p.ch<0)peUn+=Math.abs(p.ch);
+    });
+    set("sm68CEWrite")(nf(ceWrite)+" OI");
+    set("sm68PEWrite")(nf(peWrite)+" OI");
+    set("sm68CEUnwind")(nf(ceUn)+" OI");
+    set("sm68PEUnwind")(nf(peUn)+" OI");
+    const total=Math.max(1,cePressure+peSupport);
+    const cePct=100*cePressure/total, pePct=100*peSupport/total;
+    el("sm68CEBar").style.width=pct(cePct);
+    el("sm68PEBar").style.width=pct(pePct);
+    set("sm68CEText")(pct(cePct)+" of positive OI change");
+    set("sm68PEText")(pct(pePct)+" of positive OI change");
+    const pcr=typeof d.full_chain?.pcr==="number"?d.full_chain.pcr:(typeof d.atm_window?.pcr==="number"?d.atm_window.pcr:null);
+    set("sm68PCR")(pcr==null?"—":pcr.toFixed(3));
+    const maxCE=rows.reduce((a,x)=>(x.ce?.oi||0)>(a.ce?.oi||0)?x:a,rows[0]);
+    const maxPE=rows.reduce((a,x)=>(x.pe?.oi||0)>(a.pe?.oi||0)?x:a,rows[0]);
+    set("sm68Support")(nf(maxPE.strike));
+    set("sm68Resistance")(nf(maxCE.strike));
+    let action="Mixed OI build-up";
+    if(cePressure>peSupport*1.15) action="Call-side OI addition dominates";
+    else if(peSupport>cePressure*1.15) action="Put-side OI addition dominates";
+    set("sm68Action")(action);
+    const atm=rows.find(x=>Number(x.strike)===Number(d.atm_strike))||rows[Math.floor(rows.length/2)];
+    const cc=Number(atm?.ce?.oi_change||0),pp=Number(atm?.pe?.oi_change||0);
+    let shift="ATM OI changes mixed";
+    if(cc>0&&pp<0) shift="ATM shift toward call-side pressure";
+    else if(pp>0&&cc<0) shift="ATM shift toward put-side support";
+    else if(cc>0&&pp>0) shift="ATM OI building on both sides";
+    else if(cc<0&&pp<0) shift="ATM OI unwinding on both sides";
+    set("sm68Shift")(shift);
+    const v=el("sm68Verdict");
+    let verdict="WAIT",reason="Evidence is mixed or incomplete.";
+    if(peSupport>cePressure*1.25 && (pcr==null||pcr>=1)){verdict="PUT-SIDE SUPPORT";reason="Positive PE OI addition is materially larger; PCR is not below 1.";}
+    else if(cePressure>peSupport*1.25 && (pcr==null||pcr<1)){verdict="CALL-SIDE PRESSURE";reason="Positive CE OI addition is materially larger; PCR is below 1.";}
+    v.className="sm68Foot "+(verdict==="WAIT"?"sm68Wait":verdict==="PUT-SIDE SUPPORT"?"sm68Bull":"sm68Bear");
+    v.innerHTML="📊 <b>Smart Money Bias: "+verdict+"</b> — "+reason+
+      '<br><small>V68 uses OI build-up/unwinding as an evidence label. It does not prove whether positions are writing or buying. Confirm with price, VWAP, volume and risk controls.</small>';
+    el("sm68Status").textContent="🟢 ANALYZER • LINKED";
+    el("sm68Status").className="liveStatus ok";
+  };
+  window.addEventListener("load",function(){
+    setTimeout(function(){
+      const old=window.loadOptionChain67;
+      if(typeof old!=="function")return;
+      const orig=window.fetch;
+      const hook=function(input,init){
+        const p=orig(input,init);
+        if(String(input).includes("/api/upstox/option-chain")){
+          p.then(r=>r.clone().json().then(d=>window.runSmartMoney68(d)).catch(()=>{})).catch(()=>{});
+        }
+        return p;
+      };
+      window.fetch=hook;
+      setTimeout(function(){ if(typeof window.loadOptionChain67==="function") window.loadOptionChain67(); },100);
+    },700);
+  });
 })();
 </script>
 
