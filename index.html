@@ -12292,7 +12292,7 @@ updateProgress();
 <script>
 /* V75 AUTO SWING SCANNER */
 (function(){
- const el=id=>document.getElementById(id),set=(id,v)=>{if(el(id))el[id].textContent=v};
+ const el=id=>document.getElementById(id),set=(id,v)=>{if(el(id))el(id).textContent=v};
  function esc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
  const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:2}):"—";
  function status(t,c){const x=el("v75Status");x.textContent=t;x.className="liveStatus "+(c||"")}
