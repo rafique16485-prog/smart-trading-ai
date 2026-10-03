@@ -23,7 +23,16 @@
 @media(max-width:800px){.v70Grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.v70Grid,.v70EvidenceGrid{grid-template-columns:1fr}}
 </style>
-</head><!DOCTYPE html>
+<style id="v71Styles">
+.v71{margin-top:18px}.v71Head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.v71Tools{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.v71Tools select,.v71Tools button{min-height:44px}
+.v71Chart{border:1px solid #e4e7eb;border-radius:16px;background:#fff;overflow:hidden}.v71Chart svg{display:block;width:100%;height:auto;min-height:300px}
+.v71Legend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid #edf0f2;font-size:12px;color:#697586}
+.v71Legend b{color:#182230}.v71Read{margin-top:12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.v71Box{padding:12px;border:1px solid #e4e7eb;border-radius:13px;background:#fff}.v71Box b{font-size:12px;color:#697586;display:block}.v71Box strong{display:block;margin-top:4px}
+.v71Gate{margin-top:12px;padding:14px;border-radius:14px}.v71Wait{background:#fff3e8;border:1px solid #ffd7ad}
+@media(max-width:600px){.v71Read{grid-template-columns:1fr}.v71Chart svg{min-height:250px}}
+</style></head><!DOCTYPE html>
 
 <html lang="hi"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>Trading Learning AI V8 — Visual Chart Lab</title>
@@ -329,6 +338,14 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
   <p class="small muted v70Foot">V70 is an educational evidence-combination layer. It does not guarantee a trade outcome and does not place orders. Missing/closed-market data → WAIT.</p>
 </section>
 
+<section id="visualChart71" class="hero v71">
+<div class="v71Head"><div><h2>📈 V71 — Visual 5-Minute Evidence Chart</h2><p class="muted">Candles + VWAP + Volume • Visual evidence only • No-data → WAIT</p></div><div id="v71Status" class="liveStatus">⏳ Loading…</div></div>
+<div class="v71Tools"><select id="v71Underlying"><option value="nifty">NIFTY 50</option><option value="banknifty">BANK NIFTY</option></select><button onclick="loadVisualChart71()">📊 Load 5M Chart</button></div>
+<div class="v71Chart"><svg id="v71Svg" viewBox="0 0 900 430" role="img" aria-label="5 minute evidence chart"></svg><div class="v71Legend"><span>🕯️ Candles</span><span>━ VWAP</span><span>▮ Volume</span><span><b>HH-HL / LH-LL</b> = recent structure</span></div></div>
+<div class="v71Read"><div class="v71Box"><b>PRICE</b><strong id="v71Price">—</strong></div><div class="v71Box"><b>VWAP</b><strong id="v71VWAP">—</strong></div><div class="v71Box"><b>STRUCTURE</b><strong id="v71Structure">—</strong></div><div class="v71Box"><b>LAST CANDLE</b><strong id="v71Candle">—</strong></div><div class="v71Box"><b>VOLUME</b><strong id="v71Volume">—</strong></div><div class="v71Box"><b>CHART BARS</b><strong id="v71Bars">—</strong></div></div>
+<div id="v71Gate" class="v71Gate v71Wait">📊 <b>VISUAL GATE: WAIT</b> — waiting for live 5-minute candles.</div>
+<p class="small muted">This chart is a visual evidence tool, not a guaranteed trading signal. It does not place orders.</p>
+</section>
 <div id="topics">
 <section class="topic" id="topic-01">
 <div class="topic-head"><span class="num">01</span><div><h2>Trading Basics</h2><p class="muted">Capital, liquidity, timeframe, orders, risk और trading process.</p></div></div>
@@ -12038,4 +12055,37 @@ updateProgress();
 })();
 </script>
 
+<script>
+/* V71 VISUAL 5-MINUTE EVIDENCE CHART */
+(function(){
+ const el=id=>document.getElementById(id), set=(id,v)=>{if(el(id))el(id).textContent=v};
+ const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:2}):"—";
+ function status(t,c){const x=el("v71Status");x.textContent=t;x.className="liveStatus "+(c||"")}
+ function esc(v){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+ function render(d){
+   const svg=el("v71Svg"), data=Array.isArray(d.chart_candles)?d.chart_candles:[];
+   if(!data.length) throw new Error("No 5-minute candles returned");
+   const W=900,H=430,left=55,right=15,top=18,priceH=280,volTop=315,volH=90;
+   const hi=Math.max(...data.map(c=>c.high)), lo=Math.min(...data.map(c=>c.low)), span=(hi-lo)||1;
+   const x=i=>left+(i/(Math.max(1,data.length-1)))*(W-left-right);
+   const y=p=>top+(hi-p)/span*priceH;
+   const vmax=Math.max(1,...data.map(c=>c.volume));
+   const vy=v=>volTop+volH-(v/vmax)*volH;
+   let out='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="white"/>';
+   [0,0.25,0.5,0.75,1].forEach(t=>{const yy=top+t*priceH;out+='<line x1="'+left+'" y1="'+yy+'" x2="'+(W-right)+'" y2="'+yy+'" stroke="#e8ebef" stroke-width="1"/>';out+='<text x="5" y="'+(yy+4)+'" font-size="11" fill="#697586">'+esc(nf(hi-t*span))+'</text>'});
+   const bw=Math.max(4,Math.min(11,(W-left-right)/data.length*.58));
+   data.forEach((c,i)=>{const xx=x(i), up=c.close>=c.open, bodyY=y(Math.max(c.open,c.close)), bodyH=Math.max(2,Math.abs(y(c.open)-y(c.close)));out+='<line x1="'+xx+'" y1="'+y(c.high)+'" x2="'+xx+'" y2="'+y(c.low)+'" stroke="#687385" stroke-width="1.2"/>';out+='<rect x="'+(xx-bw/2)+'" y="'+bodyY+'" width="'+bw+'" height="'+bodyH+'" fill="'+(up?'#198754':'#dc3545')+'" rx="1"/>';out+='<rect x="'+(xx-bw/2)+'" y="'+vy(c.volume)+'" width="'+bw+'" height="'+(volTop+volH-vy(c.volume))+'" fill="'+(up?'#9bd3b2':'#f1b1b1')+'"/>';});
+   if(typeof d.vwap==="number"){const yy=y(d.vwap);out+='<line x1="'+left+'" y1="'+yy+'" x2="'+(W-right)+'" y2="'+yy+'" stroke="#8a5cf6" stroke-width="2"/>';out+='<text x="'+(W-right-58)+'" y="'+(yy-6)+'" font-size="11" fill="#6f42c1">VWAP</text>';}
+   out+='<line x1="'+left+'" y1="'+volTop+'" x2="'+(W-right)+'" y2="'+volTop+'" stroke="#dfe3e8"/><text x="'+left+'" y="'+(H-8)+'" font-size="11" fill="#697586">5-minute candles • '+data.length+' bars</text>';
+   svg.innerHTML=out;
+   set("v71Price",nf(data[data.length-1].close));set("v71VWAP",typeof d.vwap==="number"?nf(d.vwap):"Unavailable");set("v71Structure",d.structure_5m||"Unavailable");set("v71Candle",d.candle_bias||"Unavailable");set("v71Volume",d.volume_ratio==null?"Unavailable":nf(d.volume_ratio)+"× avg"+(d.volume_spike?" • SPIKE":""));set("v71Bars",String(data.length));
+ }
+ window.loadVisualChart71=async function(){
+   const u=el("v71Underlying").value;status("⏳ LOADING 5M…","");
+   try{const r=await fetch("/api/upstox/confluence?underlying="+encodeURIComponent(u)+"&interval=5",{cache:"no-store"});const d=await r.json();if(!d.count)throw new Error(d.message||d.error||"No intraday candles returned");render(d);el("v71Gate").innerHTML="📊 <b>VISUAL GATE: "+(d.above_vwap?"PRICE ABOVE VWAP":"PRICE BELOW VWAP")+"</b> — "+(d.structure_5m||"structure unavailable")+" • "+(d.candle_bias||"candle unavailable");status("🟢 CHART LIVE","ok");}
+   catch(e){el("v71Svg").innerHTML='<text x="450" y="210" text-anchor="middle" font-size="18" fill="#697586">WAIT • '+esc(e.message||"Data unavailable")+'</text>';set("v71Price","—");set("v71VWAP","—");set("v71Structure","—");set("v71Candle","—");set("v71Volume","—");set("v71Bars","—");el("v71Gate").innerHTML="📊 <b>VISUAL GATE: WAIT</b> — "+esc(e.message||"Required 5-minute data unavailable.");status("🟠 WAIT • DATA UNAVAILABLE","bad");}
+ };
+ setTimeout(()=>{if(typeof window.loadVisualChart71==="function")window.loadVisualChart71()},1600);
+})();
+</script>
 </body></html>
