@@ -50,6 +50,27 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 .liveFooter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;color:#667085;font-size:13px}
 @media(max-width:800px){.liveGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.livePrice{font-size:23px}}
 @media(max-width:430px){.liveGrid{grid-template-columns:1fr}}
+
+<style>
+/* OPTION CHAIN V67 */
+.oc67{border:2px solid #dbeafe;background:linear-gradient(180deg,#fff 0%,#f8fbff 100%)}
+.oc67Head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.oc67Tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.oc67Tools select,.oc67Tools input{min-width:160px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff}
+.oc67Summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:12px 0}
+.oc67Stat{background:#fff;border:1px solid #dbe3ec;border-radius:12px;padding:12px}
+.oc67Stat b{display:block;font-size:12px;color:#667085}.oc67Stat strong{font-size:20px}
+.oc67TableWrap{overflow:auto;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+.oc67Table{width:100%;border-collapse:collapse;min-width:900px}
+.oc67Table th,.oc67Table td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;white-space:nowrap;font-size:12px}
+.oc67Table th{background:#f8fafc;font-weight:900;color:#475467}
+.oc67Table th:nth-child(4),.oc67Table td:nth-child(4){background:#eff6ff;font-weight:900}
+.oc67Atm{background:#fef3c7!important}
+.oc67Call{color:#166534}.oc67Put{color:#991b1b}
+.oc67Verdict{margin-top:12px;padding:13px;border-radius:12px;background:#f8fafc;border:1px solid #cbd5e1;font-weight:800}
+@media(max-width:800px){.oc67Summary{grid-template-columns:repeat(2,minmax(0,1fr))}.oc67Stat strong{font-size:17px}}
+</style>
+
 </style>
 
 </head>
@@ -98,6 +119,43 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
     <span class="small">Auto-refresh: 15 sec</span>
   </div>
   <p id="liveError" class="danger small" style="display:none"></p>
+</section>
+
+
+<section id="optionChain67" class="hero oc67">
+  <div class="oc67Head">
+    <div>
+      <h2>🔗 Smart Trading AI — Live Option Chain</h2>
+      <p class="muted">Upstox • ATM window • OI / OI Change / Volume / IV / PCR</p>
+    </div>
+    <div id="oc67Status" class="liveStatus">⏳ Loading option chain…</div>
+  </div>
+  <div class="oc67Tools">
+    <select id="oc67Underlying" aria-label="Underlying">
+      <option value="nifty">NIFTY 50</option>
+      <option value="banknifty">BANK NIFTY</option>
+    </select>
+    <input id="oc67Expiry" value="current_week" placeholder="current_week or YYYY-MM-DD" aria-label="Expiry">
+    <button onclick="loadOptionChain67()">🔄 Load Chain</button>
+  </div>
+  <div class="oc67Summary">
+    <div class="oc67Stat"><b>SPOT</b><strong id="oc67Spot">—</strong></div>
+    <div class="oc67Stat"><b>ATM</b><strong id="oc67ATM">—</strong></div>
+    <div class="oc67Stat"><b>PCR • FULL OI</b><strong id="oc67PCR">—</strong></div>
+    <div class="oc67Stat"><b>SUPPORT • MAX PE OI</b><strong id="oc67Support">—</strong></div>
+    <div class="oc67Stat"><b>RESISTANCE • MAX CE OI</b><strong id="oc67Resistance">—</strong></div>
+  </div>
+  <div class="oc67TableWrap">
+    <table class="oc67Table">
+      <thead><tr>
+        <th>CE LTP</th><th>CE OI</th><th>CE ΔOI</th><th>STRIKE</th>
+        <th>PE ΔOI</th><th>PE OI</th><th>PE LTP</th><th>VOL CE/PE</th><th>IV CE/PE</th>
+      </tr></thead>
+      <tbody id="oc67Body"><tr><td colspan="9" style="text-align:center;padding:18px">Loading…</td></tr></tbody>
+    </table>
+  </div>
+  <div id="oc67Verdict" class="oc67Verdict">Waiting for option-chain data…</div>
+  <p id="oc67Error" class="danger small" style="display:none"></p>
 </section>
 
 <div id="topics">
