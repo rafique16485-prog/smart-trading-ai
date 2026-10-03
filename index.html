@@ -42,6 +42,12 @@
 .v72VolBar{height:20px;border-radius:99px;background:#edf0f3;overflow:hidden;margin:9px 0}.v72VolBar i{display:block;height:100%;width:0%;transition:width .25s}
 .v72Scale{display:flex;justify-content:space-between;font-size:11px;color:#697586}.v72Note{margin-top:12px;padding:13px;border-radius:13px;background:#f7f8fa}
 @media(max-width:700px){.v72Grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){.v72Grid{grid-template-columns:1fr}}
+</style><style id="v73Styles">
+.v73{margin-top:18px}.v73Head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}.v73Tools{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}.v73Tools select,.v73Tools button{min-height:44px}
+.v73Hero{padding:16px;border:1px solid #e4e7eb;border-radius:16px;background:#fff}.v73Bias{font-size:25px;font-weight:800}.v73Sub{margin-top:4px;color:#697586}
+.v73Grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}.v73Box{padding:12px;border:1px solid #e4e7eb;border-radius:13px;background:#fff}.v73Box b{display:block;font-size:11px;color:#697586}.v73Box strong{display:block;margin-top:4px;font-size:16px}
+.v73Setup{margin-top:12px;padding:15px;border-radius:15px;border:1px solid #e4e7eb;background:#fff}.v73Row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #edf0f2}.v73Row:last-child{border-bottom:0}.v73Row b{color:#697586}.v73Gate{margin-top:12px;padding:15px;border-radius:15px}.v73Wait{background:#fff3e8;border:1px solid #ffd7ad}.v73Alive{background:#eaf8ef;border:1px solid #bde5c9}.v73Kill{background:#fff0f0;border:1px solid #f2c2c2}
+@media(max-width:760px){.v73Grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:500px){.v73Grid{grid-template-columns:1fr}}
 </style></head><!DOCTYPE html>
 
 <html lang="hi"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
@@ -373,6 +379,27 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 <div class="v72Vol"><b>📊 Volume Bar</b><div id="v72VolText" class="small muted">—</div><div class="v72VolBar"><i id="v72VolFill"></i></div><div class="v72Scale"><span>LOW</span><span>NORMAL</span><span>ELEVATED</span><span>SPIKE</span></div></div>
 <div class="v72Note">ℹ️ <b>Educational regime engine:</b> classification uses recent 5M structure, EMA20/EMA50, ATR and price relationship. It is a heuristic, not a prediction.</div>
 <div id="v72Gate" class="v72Regime">📊 <b>GATE: WAIT</b> — required live data unavailable.</div>
+</section>
+<section id="optionSetup73" class="hero v73">
+<div class="v73Head"><div><h2>🎯 V73 — Live Options Setup Engine</h2><p class="muted">Regime → Price Action → VWAP → Structure → Volume → OI/PCR → Entry Gate → Kill Criteria</p></div><div id="v73Status" class="liveStatus">⏳ Loading…</div></div>
+<div class="v73Tools"><select id="v73Underlying"><option value="nifty">NIFTY 50</option><option value="banknifty">BANK NIFTY</option></select><button onclick="loadSetup73()">🎯 Analyze Live Setup</button></div>
+<div class="v73Hero"><div id="v73Bias" class="v73Bias">WAIT</div><div id="v73Sub" class="v73Sub">Waiting for complete live evidence.</div></div>
+<div class="v73Grid">
+<div class="v73Box"><b>REGIME</b><strong id="v73Regime">—</strong></div><div class="v73Box"><b>SPOT</b><strong id="v73Spot">—</strong></div>
+<div class="v73Box"><b>VWAP</b><strong id="v73VWAP">—</strong></div><div class="v73Box"><b>5M STRUCTURE</b><strong id="v73Structure">—</strong></div>
+<div class="v73Box"><b>VOLUME</b><strong id="v73Volume">—</strong></div><div class="v73Box"><b>PCR</b><strong id="v73PCR">—</strong></div>
+<div class="v73Box"><b>OI PRESSURE</b><strong id="v73OI">—</strong></div><div class="v73Box"><b>ATM STRIKE</b><strong id="v73Strike">—</strong></div>
+</div>
+<div class="v73Setup">
+<div class="v73Row"><b>ENTRY TRIGGER</b><span id="v73Entry">—</span></div>
+<div class="v73Row"><b>CURRENT OPTION PREMIUM</b><span id="v73Premium">—</span></div>
+<div class="v73Row"><b>UNDERLYING INVALIDATION / SL</b><span id="v73SL">—</span></div>
+<div class="v73Row"><b>T1 / T2</b><span id="v73Targets">—</span></div>
+<div class="v73Row"><b>R:R REFERENCE</b><span id="v73RR">—</span></div>
+<div class="v73Row"><b>KILL CRITERIA</b><span id="v73Kill">—</span></div>
+</div>
+<div id="v73Gate" class="v73Gate v73Wait">📊 <b>DECISION GATE: WAIT</b> — evidence incomplete.</div>
+<p class="small muted">V73 is an evidence-based educational framework. It does not predict future moves, guarantee profits, or place orders. Entry is trigger-based; if price is already extended, the engine can return CHASE → WAIT.</p>
 </section>
 <div id="topics">
 <section class="topic" id="topic-01">
@@ -12136,6 +12163,65 @@ updateProgress();
   }catch(e){set("v72RegimeText","WAIT");set("v72RegimeReason",e.message||"Data unavailable");set("v72Price","—");set("v72E20","—");set("v72E50","—");set("v72ATR","—");set("v72Structure","—");set("v72VWAP","—");set("v72VR","—");set("v72VS","—");el("v72VolFill").style.width="0%";set("v72VolText","Volume unavailable");el("v72Gate").innerHTML="📊 <b>GATE: WAIT</b> — "+(e.message||"Required data unavailable.");status("🟠 WAIT • DATA UNAVAILABLE","bad")}
  };
  setTimeout(()=>{if(typeof window.loadRegime72==="function")window.loadRegime72()},1800);
+})();
+</script>
+<script>
+/* V73 LIVE OPTIONS SETUP ENGINE */
+(function(){
+ const el=id=>document.getElementById(id),set=(id,v)=>{if(el(id))el(id).textContent=v};
+ const nf=v=>typeof v==="number"?v.toLocaleString("en-IN",{maximumFractionDigits:2}):"—";
+ const n=v=>Number.isFinite(Number(v))?Number(v):null;
+ function status(t,c){const x=el("v73Status");x.textContent=t;x.className="liveStatus "+(c||"")}
+ function reset(){["v73Regime","v73Spot","v73VWAP","v73Structure","v73Volume","v73PCR","v73OI","v73Strike","v73Entry","v73Premium","v73SL","v73Targets","v73RR","v73Kill"].forEach(id=>set(id,"—"))}
+ window.loadSetup73=async function(){
+  const u=el("v73Underlying").value;status("⏳ ANALYZING…","");reset();
+  try{
+   const cr=await fetch("/api/upstox/confluence?underlying="+encodeURIComponent(u)+"&interval=5",{cache:"no-store"});const cd=await cr.json();
+   let od=await (await fetch("/api/upstox/option-chain?underlying="+encodeURIComponent(u)+"&expiry=current_week",{cache:"no-store"})).json();
+   if(!od.chain?.length)od=await (await fetch("/api/upstox/option-chain?underlying="+encodeURIComponent(u)+"&expiry=next_week",{cache:"no-store"})).json();
+   if(!cd.count||!od.chain?.length)throw new Error("Required live candles or option-chain data unavailable.");
+   const spot=n(od.spot),vwap=n(cd.vwap),reg=cd.market_regime||"INSUFFICIENT DATA",structure=cd.structure_5m||"MIXED",pcr=n(od.full_chain?.pcr);
+   const pe=od.chain.reduce((s,x)=>s+Math.max(0,n(x.pe?.oi_change)||0),0),ce=od.chain.reduce((s,x)=>s+Math.max(0,n(x.ce?.oi_change)||0),0);
+   const oi=pe>ce*1.25?"PUT-SIDE SUPPORT":ce>pe*1.15?"CALL-SIDE PRESSURE":"MIXED OI";
+   const bullish=reg==="TREND UP"|| (reg==="REVERSAL WATCH"&&structure==="HH-HL");
+   const bearish=reg==="TREND DOWN"|| (reg==="REVERSAL WATCH"&&structure==="LH-LL");
+   const side=bullish&&!bearish?"CALL":bearish&&!bullish?"PUT":"WAIT";
+   const above=cd.above_vwap===true,below=cd.above_vwap===false;
+   const aligned=(side==="CALL"&&above&&structure==="HH-HL")||(side==="PUT"&&below&&structure==="LH-LL");
+   const volOK=cd.volume_ratio!=null&&cd.volume_ratio>=1.15;
+   const supportive=(side==="CALL"&&oi==="PUT-SIDE SUPPORT")||(side==="PUT"&&oi==="CALL-SIDE PRESSURE");
+   const evidence=(aligned?1:0)+(volOK?1:0)+(supportive?1:0);
+   const rows=cd.chart_candles||[], recent=rows.slice(-8);
+   const recentHigh=recent.length?Math.max(...recent.map(x=>n(x.high))):null,recentLow=recent.length?Math.min(...recent.map(x=>n(x.low))):null;
+   const range=recentHigh!=null&&recentLow!=null?recentHigh-recentLow:null;
+   let entry="WAIT — trigger not confirmed",sl="—",targets="—",rr="—",kill="—",premium="—",strike=od.atm_strike;
+   const atm=od.chain.find(x=>Number(x.strike)===Number(strike))||od.chain[Math.floor(od.chain.length/2)];
+   if(side==="CALL"&&atm?.ce?.ltp!=null)premium="CE "+nf(n(atm.ce.ltp));
+   if(side==="PUT"&&atm?.pe?.ltp!=null)premium="PE "+nf(n(atm.pe.ltp));
+   if(side==="CALL"&&spot!=null&&recentHigh!=null){
+     const trigger=Math.max(recentHigh,vwap||-Infinity);
+     const invalid=Math.min(recentLow,vwap||Infinity);
+     const risk=Math.max(spot-invalid,0);
+     const extended=range!=null&&spot>recentLow+range*0.85;
+     entry=aligned&&!extended?"5M close above "+nf(trigger)+" + volume confirmation":extended?"CHASE → WAIT (price extended)":"Wait for 5M reclaim/close above "+nf(trigger);
+     sl=nf(invalid);const t1=trigger+risk*1.5,t2=trigger+risk*2.0;targets=nf(t1)+" / "+nf(t2);rr=risk>0?"1:1.5 / 1:2.0":"—";kill="5M close below VWAP + recent HL break";
+   }else if(side==="PUT"&&spot!=null&&recentLow!=null){
+     const trigger=Math.min(recentLow,vwap||Infinity);
+     const invalid=Math.max(recentHigh,vwap||-Infinity);
+     const risk=Math.max(invalid-spot,0);
+     const extended=range!=null&&spot<recentLow+range*0.15;
+     entry=aligned&&!extended?"5M close below "+nf(trigger)+" + volume confirmation":extended?"CHASE → WAIT (price extended)":"Wait for 5M breakdown/close below "+nf(trigger);
+     sl=nf(invalid);const t1=trigger-risk*1.5,t2=trigger-risk*2.0;targets=nf(t1)+" / "+nf(t2);rr=risk>0?"1:1.5 / 1:2.0":"—";kill="5M close above VWAP + recent LH break";
+   }
+   set("v73Regime",reg);set("v73Spot",nf(spot));set("v73VWAP",nf(vwap));set("v73Structure",structure);set("v73Volume",cd.volume_ratio==null?"Unavailable":nf(cd.volume_ratio)+"× • "+(cd.volume_state||""));set("v73PCR",pcr==null?"Unavailable":pcr.toFixed(3));set("v73OI",oi);set("v73Strike",nf(strike));set("v73Entry",entry);set("v73Premium",premium);set("v73SL",sl);set("v73Targets",targets);set("v73RR",rr);set("v73Kill",kill);
+   const gate=el("v73Gate"),bias=el("v73Bias"),sub=el("v73Sub");
+   if(side==="WAIT"||evidence<2||reg==="RANGE"||reg==="TRANSITION"||reg==="INSUFFICIENT DATA"){bias.textContent="⚪ WAIT";sub.textContent="No clean directional setup: require regime + price action + confirmation.";gate.className="v73Gate v73Wait";gate.innerHTML="📊 <b>DECISION GATE: WAIT</b> — evidence alignment is insufficient ("+evidence+"/3).";status("🟠 WAIT","bad")}
+   else if(entry.startsWith("CHASE")){bias.textContent="⚪ CHASE → WAIT";sub.textContent=side+" evidence exists, but price is already extended.";gate.className="v73Gate v73Wait";gate.innerHTML="📊 <b>DECISION GATE: CHASE → WAIT</b> — do not enter after extension.";status("🟡 CHASE FILTER","")}
+   else if(!aligned){bias.textContent="🟡 "+side+" WATCH";sub.textContent="Directional context exists, but the entry trigger is not confirmed.";gate.className="v73Gate v73Wait";gate.innerHTML="📊 <b>DECISION GATE: WAIT FOR TRIGGER</b> — "+side+" context only.";status("🟡 WAIT FOR TRIGGER","")}
+   else {bias.textContent="🟢 "+side+" SETUP";sub.textContent="Trigger confirmed by price/VWAP/structure; verify option premium before any action.";gate.className="v73Gate v73Alive";gate.innerHTML="📊 <b>DECISION GATE: "+side+" SETUP</b> — evidence aligned ("+evidence+"/3).";status("🟢 SETUP READY","ok")}
+  }catch(e){reset();el("v73Bias").textContent="⚪ WAIT";el("v73Sub").textContent=e.message||"Data unavailable";el("v73Gate").className="v73Gate v73Wait";el("v73Gate").innerHTML="📊 <b>DECISION GATE: WAIT</b> — "+(e.message||"Required data unavailable.");status("🟠 WAIT • DATA UNAVAILABLE","bad")}
+ };
+ setTimeout(()=>{if(typeof window.loadSetup73==="function")window.loadSetup73()},2000);
 })();
 </script>
 </body></html>
