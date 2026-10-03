@@ -109,7 +109,8 @@ module.exports = async (req, res) => {
       structure_5m: interval === 5 ? structure : null,
       candle_bias: candleBias,
       volume_ratio: volumeRatio,
-      volume_spike: volumeSpike
+      volume_spike: volumeSpike,
+      chart_candles: ordered.slice(-60)
     });
   } catch (e) {
     return res.status(502).json({ connected: true, source: "Upstox V3 Intraday Candles", error: e.message });
