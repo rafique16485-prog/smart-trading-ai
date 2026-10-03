@@ -12314,4 +12314,93 @@ updateProgress();
  };
 })();
 </script>
+<script>
+/* V75 WHATSAPP SHARING */
+(function(){
+  const el=id=>document.getElementById(id);
+  const esc=v=>String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+  function waOpen(message){
+    const url="https://wa.me/?text="+encodeURIComponent(message);
+    window.open(url,"_blank","noopener,noreferrer");
+  }
+
+  function rowMessage(row){
+    const cells=[...row.querySelectorAll("td")].map(x=>x.innerText.trim());
+    if(!cells.length)return "";
+    return [
+      "📊 Smart Trading AI — Swing Scanner",
+      "",
+      "Stock: "+(cells[0]||"—").replace(/\n/g," "),
+      "Score: "+(cells[1]||"—"),
+      "Price: "+(cells[2]||"—"),
+      "RSI: "+(cells[3]||"—"),
+      "Volume: "+(cells[4]||"—"),
+      "Breakout: "+(cells[5]||"—"),
+      "Consolidation: "+(cells[6]||"—"),
+      "Trend: "+(cells[7]||"—"),
+      "News: "+(cells[8]||"—").replace(/\n/g," "),
+      "Govt/Event: "+(cells[9]||"—"),
+      "Setup: "+(cells[10]||"—"),
+      "",
+      "⚠️ Educational scanner output. Verify live price, entry, SL, target and risk before any trade."
+    ].join("\n");
+  }
+
+  function addRowButtons(){
+    const table=el("v75Body");
+    if(!table)return;
+    [...table.querySelectorAll("tr")].forEach(row=>{
+      if(row.dataset.waAdded==="1")return;
+      const cells=row.querySelectorAll("td");
+      if(!cells.length || cells.length<11)return;
+      const td=document.createElement("td");
+      const b=document.createElement("button");
+      b.type="button";
+      b.textContent="📲 Share";
+      b.style.cssText="background:#25D366;color:#fff;padding:8px 10px;border-radius:9px;font-size:12px;margin:0";
+      b.onclick=()=>waOpen(rowMessage(row));
+      td.appendChild(b);row.appendChild(td);row.dataset.waAdded="1";
+    });
+  }
+
+  function addMasterButton(){
+    const tools=document.querySelector(".v75Tools");
+    if(!tools || el("v75WhatsAppShare"))return;
+    const b=document.createElement("button");
+    b.id="v75WhatsAppShare";
+    b.type="button";
+    b.textContent="📲 WhatsApp Share";
+    b.style.cssText="background:#25D366;color:#fff";
+    b.onclick=()=>{
+      const rows=[...el("v75Body").querySelectorAll("tr")].filter(r=>r.querySelectorAll("td").length>=11);
+      if(!rows.length){waOpen("📊 Smart Trading AI — Swing Scanner\n\nNo scan results available. Run AUTO SCAN SWING first.");return}
+      const universe=el("v75Universe")?.selectedOptions?.[0]?.textContent||"Selected universe";
+      const lines=["📊 Smart Trading AI — Swing Scanner","Universe: "+universe,""];
+      rows.slice(0,10).forEach((r,i)=>{
+        const cells=[...r.querySelectorAll("td")].map(x=>x.innerText.trim());
+        lines.push((i+1)+". "+(cells[0]||"—").replace(/\n/g," ")+" | Score "+(cells[1]||"—")+" | Price "+(cells[2]||"—")+" | RSI "+(cells[3]||"—")+" | Vol "+(cells[4]||"—")+" | "+(cells[10]||"—").replace(/\n/g," "));
+      });
+      lines.push("","","⚠️ Educational scanner output. Verify live price, entry, SL, target and risk before any trade.");
+      waOpen(lines.join("\n"));
+    };
+    tools.appendChild(b);
+  }
+
+  function enhance(){
+    addMasterButton();
+    addRowButtons();
+  }
+
+  const original=window.runSwingScanner75;
+  if(typeof original==="function"){
+    window.runSwingScanner75=async function(){
+      const result=await original.apply(this,arguments);
+      setTimeout(enhance,50);
+      return result;
+    };
+  }
+  setInterval(enhance,1000);
+})();
+</script>
 </body></html>
