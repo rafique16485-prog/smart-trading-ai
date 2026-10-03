@@ -186,11 +186,31 @@ module.exports=async(req,res)=>{
       sectorMap[k].sum+=ret;sectorMap[k].count++;if(x.breakout)sectorMap[k].breakouts++;
     });
     const sectorStats=Object.fromEntries(Object.entries(sectorMap).map(([k,v])=>[k,{avgReturn:v.count?v.sum/v.count:0,count:v.count,breakouts:v.breakouts}]));
+    // Company-level fundamentals are fetched only for the top 15 technical candidates
+    const fundMap={};
+    await Promise.all(scored.slice(0,15).map(async x=>{
+      try{
+        const [sh,ca,rat] = await Promise.all([
+          request("https://api.upstox.com/v2/fundamentals/"+encodeURIComponent(x.isin)+"/share-holdings",token),
+          request("https://api.upstox.com/v2/fundamentals/"+encodeURIComponent(x.isin)+"/corporate-actions",token),
+          request("https://api.upstox.com/v2/fundamentals/"+encodeURIComponent(x.isin)+"/key-ratios",token)
+        ]);
+        const cats=sh?.data||[];
+        const latest=cat=>{const h=cats.find(z=>String(z.category||"").toLowerCase()===cat)?.history||[];return h.length?h[h.length-1]:null};
+        const prev=cat=>{const h=cats.find(z=>String(z.category||"").toLowerCase()===cat)?.history||[];return h.length>1?h[h.length-2]:null};
+        const p=latest("promoters"),fi=latest("fii"),di=latest("other_dii");
+        const pp=prev("promoters"),fp=prev("fii"),dp=prev("other_dii");
+        const actions=Array.isArray(ca?.data)?ca.data.slice(0,5):[];
+        const ratios=rat?.data||{};
+        fundMap[x.isin]={shareholding:{promoter:p?.value??null,fii:fi?.value??null,dii:di?.value??null,promoterChange:pp&&p?p.value-pp.value:null,fiiChange:fp&&fi?fi.value-fp.value:null,diiChange:dp&&di?di.value-dp.value:null,period:p?.period||fi?.period||di?.period||null},corporateActions:actions.slice(0,3).map(a=>({name:a.name,expiry_date:a.expiry_date,amount:a.amount,ratio:a.ratio})),ratios};
+      }catch(e){fundMap[x.isin]={error:e.message||"Fundamentals unavailable"}}
+    }));
     const results=scored.map(x=>{
       const ni=newsImpact(newsMap[x.key]||[]);
       const sector=sectorStats[x.industry||"UNKNOWN"]||{avgReturn:0,count:0,breakouts:0};
       const relativeStrength=benchmarkReturn!=null&&x.changePct!=null?x.changePct-benchmarkReturn:null;
-      return {...x,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading)};
+      const fund=fundMap[x.isin]||{};
+      return {...x,fundamentals:fund,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading)};
     });
     return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,benchmark:{name:"NIFTY 50",returnPct:benchmarkReturn},institutional:fiiDii,sectorStats,results,tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
       volume:"Today volume / prior 20 completed daily bars",
@@ -198,7 +218,8 @@ module.exports=async(req,res)=>{
       consolidation:"Prior 20-day range <= 12%",
       rsi:"14-period daily RSI, preferred 60–80",
       news:"Upstox news from past 7 days; keyword tags are heuristic",
-      fii_dii:"Market-wide institutional flow is not treated as stock-specific interest in this scanner."
+      fii_dii:"Market-wide institutional flow is not treated as stock-specific interest in this scanner.",
+      fundamentals:"Shareholding is quarterly; corporate actions are event-based; key ratios are descriptive context, not a trade trigger."
     }});
   }catch(e){return res.status(502).json({connected:true,error:e.message||"Swing scanner failed"})}
 };
