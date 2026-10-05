@@ -181,7 +181,7 @@ function renderTop10(){
  const eligible=all.filter(x=>x.decisionGate==="READY"||x.decisionGate==="WATCH").sort((a,b)=>(b.setupQualityScore??-999)-(a.setupQualityScore??-999)||(b.compositeScore??-999)-(a.compositeScore??-999));
  const top=eligible.slice(0,10);
  $("top10Wrap").style.display="block";
- $("top10Meta").textContent=top.length+" verified candidates • Top 10 ranked by Setup Quality /100 • READY/WATCH only • not a guarantee";
+ $("top10Meta").textContent=top.length+" verified candidates • Top 10 ranked by Setup Quality /100 • Regime aligned • READY/WATCH only • not a guarantee";
  if(!top.length){$("top10Body").innerHTML="<tr><td colspan='12'>No qualifying Top 10 candidates. WAIT.</td></tr>";return}
  $("top10Body").innerHTML=top.map((x,i)=>{const why=[];if(x.breakout)why.push("Breakout");if(x.volumeUp)why.push("Volume");if(x.rsiOK)why.push("RSI");if(x.trend)why.push("Trend");if(x.relativeStrength>0)why.push("RS");if(x.sectorAvgReturn>0)why.push("Sector");if(x.fundamentals?.quality?.revenueGrowth>0)why.push("Revenue+");if(x.fundamentals?.quality?.netProfitGrowth>0)why.push("Profit+");if(x.setupGate)why.push("Gate PASS");if(x.newsImpact==="NEGATIVE")why.push("News risk");const kill=x.chase?"DO NOT CHASE":(x.gateReason||"Close below invalidation");return "<tr><td><b>"+(i+1)+"</b></td><td><b>"+(x.symbol||"—")+"</b><br><span style='font-size:9px;color:#64748b'>"+(x.industry||"—")+"</span></td><td>"+fmt(x.ltp)+"<br><span class='"+(x.changePct>=0?"green":"red")+"'>"+(x.changePct>=0?"+":"")+Number(x.changePct||0).toFixed(2)+"%</span></td><td><span class='tag "+(x.decisionGate==="READY"?"tagg":"tagb")+"'>"+(x.decisionGate||"WAIT")+"</span></td><td><b>"+fmt(x.setupQualityScore)+"</b> <span style="font-size:9px;color:#64748b">"+(x.setupQualityGrade||"—")+"</span></td><td><b>"+fmt(x.compositeScore)+"</b></td><td>"+fmt(x.entryLow)+"–"+fmt(x.entryHigh)+"</td><td>"+fmt(x.invalidation)+"</td><td>"+fmt(x.target1)+"</td><td>"+fmt(x.target2)+"</td><td>1:"+fmt(x.riskReward||2)+"</td><td>"+(x.holdingDays?x.holdingDays+"d":"—")+"</td><td>"+(why.join(" + ")||"Technical watch")+"<br><span style='font-size:9px;color:#a86400'>Kill: "+kill+"</span></td></tr>"}).join("");
 }
@@ -189,7 +189,7 @@ async function scan(){
  $("scanBody").innerHTML="<tr><td colspan='10'>SCANNING… 100+ equity candidates • verified market data only</td></tr>";
  $("scanMeta").textContent="SCANNING • Technical + volume + RSI + trend + relative strength + news/fundamental context";
  try{const r=await fetch("/api/upstox/swing-scanner?universe="+encodeURIComponent($("universe").value),{cache:"no-store"}),d=await r.json();if(!r.ok)throw new Error(d.error||"Scanner unavailable");
- let rows=Array.isArray(d?.results)?d.results:(Array.isArray(d?.scans)?d.scans:[]); window.lastScanResults=rows; renderTop10();
+ let rows=Array.isArray(d?.results)?d.results:(Array.isArray(d?.scans)?d.scans:[]); window.lastScanResults=rows; renderTop10(); const mr=d?.marketRegime||{}; $("scanMeta").textContent="REGIME: "+(mr.regime||"WAIT")+" • "+(mr.confidence||0)+"% confidence • "+(mr.allowedSetup||"WAIT");
  const gf=$("gateFilter").value;if(gf!=="all")rows=rows.filter(x=>String(x.decisionGate||"WAIT")===gf);
  if(!rows.length){$("scanBody").innerHTML="<tr><td colspan='10'>No verified candidates match this filter.</td></tr>";$("scanMeta").textContent="SCAN COMPLETE • No qualifying setup • WAIT";return}
  rows.sort((a,b)=>(b.setupQualityScore??-999)-(a.setupQualityScore??-999)||(b.compositeScore??-999)-(a.compositeScore??-999));
