@@ -199,6 +199,64 @@ section{max-width:100%;min-width:0}
   .livePrice{font-size:24px!important}
   .v73Bias,.v74Title,.v72Regime strong{font-size:21px!important}
 }
+</style><style id="smartTradingAmoledV84">
+/* V84 — Groww/Dhan-inspired AMOLED launcher */
+:root{color-scheme:dark}
+html{background:#000}
+body{background:#000!important;color:#f4f4f5!important}
+header{background:rgba(0,0,0,.96)!important;border-bottom:1px solid #242424!important;backdrop-filter:blur(12px)}
+header .wrap{padding-top:12px!important;padding-bottom:10px!important}
+header h1{color:#fff!important;letter-spacing:-.4px}
+header .muted,.muted{color:#9ca3af!important}
+header .small{color:#a1a1aa!important}
+.hero,.topic,.card,.liveCard,.oc67Stat,.sm68Card,.c69card,.v70Stat,.v71Box,.v72Box,.v73Box,.v74Box,.v75Stat,
+.v70Evidence,.v71Chart,.v72Vol,.v73Setup,.v74Panel,.v75Table,.oc67TableWrap,.sm68BarBox{
+ background:#0b0b0d!important;color:#f4f4f5!important;border-color:#242424!important;box-shadow:none!important
+}
+section{scroll-margin-top:170px}
+h2,h3,h1,strong,b{color:#f4f4f5}
+input,select{background:#111113!important;color:#fff!important;border-color:#303035!important}
+button{background:#18181b;color:#fff;border:1px solid #2d2d32}
+button:hover{background:#242428}
+.stLauncher{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px;margin-top:12px;padding:7px 0 2px}
+.stBtn{min-width:0!important;height:58px!important;margin:0!important;padding:7px 4px!important;border-radius:13px!important;
+ background:#0d0d0f!important;border:1px solid #252529!important;color:#d4d4d8!important;
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+ gap:3px;font-size:20px!important;line-height:1!important;box-shadow:none!important}
+.stBtn span{font-size:9px!important;font-weight:800;color:#a1a1aa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.stBtn.active{border-color:#fff!important;background:#18181b!important;color:#fff!important}
+.stBtn.active span{color:#fff!important}
+.progress{background:#222!important}.progress>i{background:#fff!important}
+.liveStatus.ok{background:#052e16!important;color:#86efac!important}.liveStatus.bad{background:#450a0a!important;color:#fca5a5!important}
+.danger{color:#f87171!important}.ok{color:#86efac!important}
+.visual{background:#0d0d0f!important;border-color:#28282d!important}
+.visual .legend{background:#151519!important;color:#a1a1aa!important}
+.visual-title{color:#fff!important}
+.visual svg text{fill:#e4e4e7!important}
+.oc67Table th{background:#151519!important;color:#d4d4d8!important}
+.oc67Atm{background:#3a2d05!important}
+.oc67Call{color:#86efac!important}.oc67Put{color:#fca5a5!important}
+footer{background:#000;color:#71717a}
+@media(max-width:900px){
+ .stLauncher{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+ .stBtn{height:55px!important}
+}
+@media(max-width:600px){
+ header{position:sticky!important;top:0!important}
+ header .wrap{padding-left:7px!important;padding-right:7px!important}
+ header h1{font-size:20px!important}
+ header h1 span{font-size:9px!important;padding:4px 6px!important}
+ header .muted{font-size:11px!important}
+ .stLauncher{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:9px}
+ .stBtn{height:52px!important;border-radius:11px!important;font-size:17px!important}
+ .stBtn span{font-size:8px!important}
+ main.wrap{padding:8px!important}
+ section{scroll-margin-top:155px}
+}
+@media(max-width:380px){
+ .stLauncher{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .stBtn{height:50px!important}
+}
 </style></head><!DOCTYPE html>
 
 <html lang="hi"><head><link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#182230"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="icon" href="/icon.svg"><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
@@ -311,13 +369,22 @@ h1{margin:0;font-size:30px}h2{font-size:25px;margin:0}h3{margin-top:18px}p{margi
 <div class="small">SMART TRADING AI • FINAL • READY TO USE</div>
 <h1>Smart Trading AI — Trading Control Center<span style="display:inline-block;margin-left:8px;padding:5px 9px;border-radius:9px;background:#dcfce7;color:#166534;font-size:13px;vertical-align:middle">FINAL • READY TO USE</span></h1>
 <div class="muted">Cash Equity • ETF • Swing • Hindi ELI5 • Detailed Lessons • Visual Marking • Practice • Journal</div>
-<div class="nav">
-<button class="active" onclick="show('all',this)">🏠 All</button>
-<button onclick="show('course',this)">🎓 Course</button>
-<button onclick="show('visual',this)">🎯 Visual Lab</button>
-<button onclick="show('practice',this)">🎮 Practice</button>
-<button onclick="show('journal',this)">📒 Journal</button>
-<button onclick="show('risk',this)">🛡️ Risk</button>
+<div class="stLauncher" aria-label="Smart Trading AI modules">
+  <button class="stBtn active" onclick="openSTSection('course',this)">🏠<span>Dashboard</span></button>
+  <button class="stBtn" onclick="openSTSection('liveMarket',this)">📡<span>Live Market</span></button>
+  <button class="stBtn" onclick="openSTSection('optionChain67',this)">⛓️<span>Option Chain</span></button>
+  <button class="stBtn" onclick="openSTSection('smartMoney68',this)">🧠<span>Smart Money</span></button>
+  <button class="stBtn" onclick="openSTSection('confluence69',this)">🎯<span>Confluence</span></button>
+  <button class="stBtn" onclick="openSTSection('smartSetup70',this)">⚡<span>Smart Setup</span></button>
+  <button class="stBtn" onclick="openSTSection('marketRegime72',this)">🌡️<span>Regime</span></button>
+  <button class="stBtn" onclick="openSTSection('optionSetup73',this)">📊<span>Option Setup</span></button>
+  <button class="stBtn" onclick="openSTSection('liquidity74',this)">💧<span>Liquidity</span></button>
+  <button class="stBtn" onclick="openSTSection('swingScanner75',this)">🔎<span>Swing Scanner</span></button>
+  <button class="stBtn" onclick="openSTSection('visualChart71',this)">🕯️<span>Chart Lab</span></button>
+  <button class="stBtn" onclick="openSTSection('course',this)">🎓<span>Course</span></button>
+  <button class="stBtn" onclick="openSTSection('practice',this)">🎮<span>Practice</span></button>
+  <button class="stBtn" onclick="openSTSection('journal',this)">📒<span>Journal</span></button>
+  <button class="stBtn" onclick="openSTSection('risk',this)">🛡️<span>Risk</span></button>
 </div></div></header>
 <main class="wrap">
 <section class="hero" id="course">
@@ -12658,5 +12725,14 @@ updateProgress();
   window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;b.style.display="block"});
   b.onclick=async()=>{if(!deferred)return;deferred.prompt();await deferred.userChoice;deferred=null;b.style.display="none"};
   if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));
+})();
+</script><script id="smartTradingLauncherV84">
+(function(){
+ window.openSTSection=function(id,btn){
+   document.querySelectorAll(".stBtn").forEach(x=>x.classList.remove("active"));
+   if(btn) btn.classList.add("active");
+   var el=document.getElementById(id);
+   if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
+ };
 })();
 </script></body></html>
