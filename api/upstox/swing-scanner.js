@@ -143,7 +143,7 @@ module.exports=async(req,res)=>{
         const holdingDays=atr14&&riskPerShare>0?Math.max(3,Math.min(15,Math.round((riskPerShare/atr14)*8))):7;
         let score=0; if(breakout)score+=2;if(volumeUp)score+=2;if(consolidation)score+=1;if(rsiOK)score+=1;if(trend)score+=1;
         const trigger=breakout&&volumeUp&&rsiOK&&!chase;
-        return {...x,eligible:true,breakout,consolidation,volumeRatio:volRatio,rsi:rrsi,ema20:e20,ema50:e50,rangePct,trend,score,trigger,priorHigh:hi,priorLow:lo,atr14,entryLow,entryHigh,invalidation,riskPerShare,target1,target2,holdingDays,chase};
+        return {...x,eligible:true,breakout,consolidation,volumeRatio:volRatio,rsi:rrsi,ema20:e20,ema50:e50,rangePct,trend,score,volumeUp,rsiOK,trigger,priorHigh:hi,priorLow:lo,atr14,entryLow,entryHigh,invalidation,riskPerShare,target1,target2,holdingDays,chase};
       }catch(e){return {...x,eligible:false,error:e.message}}
     }));
     const scored=hist.filter(x=>x.eligible).sort((a,b)=>b.score-a.score||b.volumeRatio-a.volumeRatio).slice(0,30);
@@ -253,7 +253,8 @@ module.exports=async(req,res)=>{
       const sector=sectorStats[x.industry||"UNKNOWN"]||{avgReturn:0,count:0,breakouts:0};
       const relativeStrength=benchmarkReturn!=null&&x.changePct!=null?x.changePct-benchmarkReturn:null;
       const fund=fundMap[x.isin]||{};
-      const composite=finalScore({...x,fundamentals:fund,sectorAvgReturn:sector.avgReturn,relativeStrength,news:ni});\n      return {...x,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading),fundamentals:fund,compositeScore:composite,decisionGate:composite>=9?"READY":composite>=6?"WATCH":composite<=2?"AVOID":"WAIT"};
+      const composite=finalScore({...x,fundamentals:fund,sectorAvgReturn:sector.avgReturn,relativeStrength,news:ni});
+      return {...x,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading),fundamentals:fund,compositeScore:composite,decisionGate:composite>=9?"READY":composite>=6?"WATCH":composite<=2?"AVOID":"WAIT"};
     });
     return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,benchmark:{name:"NIFTY 50",returnPct:benchmarkReturn},institutional:fiiDii,sectorStats,results,tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
       volume:"Today volume / prior 20 completed daily bars",
