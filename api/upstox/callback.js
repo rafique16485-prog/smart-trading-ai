@@ -50,10 +50,12 @@ module.exports = async function handler(req, res) {
     }
 
     const maxAge = 60 * 60 * 12;
-    res.setHeader("Set-Cookie", [
+    const cookies = [
       `upstox_access_token=${encodeURIComponent(data.access_token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`,
       "upstox_oauth_state=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0"
-    ]);
+    ];
+    if (data.extended_token) cookies.push(`upstox_extended_token=${encodeURIComponent(data.extended_token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`);
+    res.setHeader("Set-Cookie", cookies);
 
     res.writeHead(302, { Location: "/?upstox=connected" });
     res.end();
