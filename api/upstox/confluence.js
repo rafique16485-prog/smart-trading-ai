@@ -25,7 +25,8 @@ function getJson(url, token) {
       });
     });
     req.on("error", reject);});
-  return attempt(0);
+    return attempt(0);
+  });
 }
 
 function parseCookies(req) {
