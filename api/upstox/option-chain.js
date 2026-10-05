@@ -48,20 +48,28 @@ export default async function handler(req, res) {
     encodeURIComponent(expiry);
 
   try {
-    const response = await fetch(url, {
+    let usedToken = cookies.upstox_access_token ? "access" : "extended";
+    let response = await fetch(url, {
       method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: "Bearer " + token
-      }
+      headers: { Accept: "application/json", Authorization: "Bearer " + token }
     });
-
-    const body = await response.json().catch(() => ({}));
+    let body = await response.json().catch(() => ({}));
+    if (!response.ok && cookies.upstox_access_token && cookies.upstox_extended_token) {
+      usedToken = "extended";
+      response = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json", Authorization: "Bearer " + cookies.upstox_extended_token }
+      });
+      body = await response.json().catch(() => ({}));
+    }
+    if (response.ok && usedToken === "extended" && cookies.upstox_access_token) {
+      res.setHeader("Set-Cookie", "upstox_access_token=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0");
+    }
 
     if (!response.ok) {
       return res.status(response.status).json({
         connected: response.status !== 401,
-        token_type: cookies.upstox_access_token ? "access" : "extended",
+        token_type: usedToken,
         error: body?.errors || body?.message || "Upstox option chain request failed"
       });
     }
