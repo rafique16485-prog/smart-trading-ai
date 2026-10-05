@@ -184,6 +184,34 @@ module.exports=async(req,res)=>{
       fiiDii={available:true,date:d,fii:fi?.data||fi,dii:di?.data||di};
     }catch(e){ fiiDii={available:false,message:e.message||"Institutional flow unavailable"}; }
 
+    // Adaptive market-regime engine: NIFTY 5m structure + VWAP + EMA + volume.
+    let marketRegime={regime:"INSUFFICIENT DATA",confidence:0,allowedBias:"WAIT",note:"Market regime unavailable"};
+    try{
+      const intraday=await request("https://api.upstox.com/v3/historical-candle/NSE_INDEX%7CNifty%2050/minutes/5/"+to+"/"+to,token);
+      const rows=(intraday?.data?.candles||[]).map(a=>({ts:a[0],open:num(a[1]),high:num(a[2]),low:num(a[3]),close:num(a[4]),volume:num(a[5])})).filter(x=>x.close!=null).reverse().slice(-78);
+      if(rows.length>=20){
+        let pv=0,pvol=0;rows.forEach(x=>{pv+=(x.close||0)*(x.volume||0);pvol+=(x.volume||0)});
+        const vwap=pvol?pv/pvol:null;
+        const cls=rows.map(x=>x.close), e20=ema(cls,20);
+        const last=rows.at(-1), prev=rows.at(-2), highs=rows.slice(-12).map(x=>x.high), lows=rows.slice(-12).map(x=>x.low);
+        const hh=Math.max(...highs), ll=Math.min(...lows);
+        const avgVol=rows.slice(-21,-1).reduce((s,x)=>s+(x.volume||0),0)/Math.max(1,rows.slice(-21,-1).length);
+        const volRatio=last.volume&&avgVol?last.volume/avgVol:null;
+        const above=last.close>vwap, emaUp=e20!=null&&last.close>e20;
+        const higher=last.high>=prev.high&&last.low>=prev.low, lower=last.high<=prev.high&&last.low<=prev.low;
+        const rangePct=last.close?((hh-ll)/last.close)*100:0;
+        let regime="TRANSITION",confidence=55,bias="WAIT",note="Mixed structure";
+        if(rangePct<=0.9 && !higher && !lower){regime="RANGE";confidence=82;bias="WAIT";note="Tight 5m range; avoid mid-range chase";}
+        else if(above&&emaUp&&higher){regime="TREND UP";confidence=86;bias="LONG";note="Price above VWAP/EMA20 with higher structure";}
+        else if(!above&&!emaUp&&lower){regime="TREND DOWN";confidence=86;bias="SHORT";note="Price below VWAP/EMA20 with lower structure";}
+        else if((above!==emaUp)&&volRatio!=null&&volRatio>=1.5){regime="REVERSAL WATCH";confidence=72;bias="WAIT";note="VWAP/EMA conflict with volume expansion";}
+        else if(above&&emaUp){regime="EARLY TREND UP";confidence=70;bias="LONG";note="Bullish alignment forming";}
+        else if(!above&&!emaUp){regime="EARLY TREND DOWN";confidence=70;bias="SHORT";note="Bearish alignment forming";}
+        const allowed=regime==="TREND UP"||regime==="EARLY TREND UP"?"LONG SETUPS":regime==="TREND DOWN"||regime==="EARLY TREND DOWN"?"SHORT SETUPS":regime==="RANGE"?"RANGE EXTREMES ONLY":"WAIT FOR CONFIRMATION";
+        marketRegime={regime,confidence,allowedBias:bias,allowedSetup:allowed,vwap,ema20:e20,volumeRatio:volRatio,note};
+      }
+    }catch(e){marketRegime.note=e.message||"Regime unavailable";}
+
     // Sector/industry relative strength from the scanned universe
     const sectorMap={};
     scored.forEach(x=>{
@@ -267,7 +295,7 @@ module.exports=async(req,res)=>{
       const composite=finalScore({...x,fundamentals:fund,sectorAvgReturn:sector.avgReturn,relativeStrength,news:ni});
       const rr=Number.isFinite(x.riskPerShare)&&x.riskPerShare>0?Number(((x.target2-x.entryLow)/x.riskPerShare).toFixed(2)):0;
       const entryDistance=Number.isFinite(x.ltp)&&Number.isFinite(x.entryHigh)&&x.entryHigh>0?Number(((x.ltp-x.entryHigh)/x.entryHigh*100).toFixed(2)):null;
-      const setupGate=x.trigger&&!x.chase&&rr>=2&&(entryDistance==null||entryDistance<=0.75);
+      const regimeCompatible=marketRegime.allowedBias==="WAIT"||marketRegime.allowedBias==="LONG"||marketRegime.allowedBias==="SHORT" ? (marketRegime.allowedBias==="WAIT" ? false : marketRegime.allowedBias==="LONG") : false;\n      const adaptiveAllowed=marketRegime.allowedBias==="WAIT" ? false : marketRegime.allowedBias==="LONG";\n      const setupGate=x.trigger&&!x.chase&&rr>=2&&(entryDistance==null||entryDistance<=0.75)&&adaptiveAllowed;
       const gateReason=setupGate?"ENTRY + VOLUME + RSI + R:R PASS":x.chase?"CHASE FILTER":!x.trigger?"BREAKOUT/VOLUME/RSI INCOMPLETE":rr<2?"R:R < 1:2":"ENTRY TOO EXTENDED";
       const decisionGate=setupGate&&composite>=9?"READY":composite>=6?"WATCH":composite<=2?"AVOID":"WAIT";
 
@@ -290,17 +318,17 @@ module.exports=async(req,res)=>{
       const marketAlignment=relativeStrength!=null && sector.avgReturn!=null
         ? (relativeStrength>0 && sector.avgReturn>0 ? "ALIGNED" : relativeStrength<0 && sector.avgReturn<0 ? "WEAK" : "MIXED")
         : "UNKNOWN";
-      return {...x,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading),fundamentals:fund,compositeScore:composite,riskReward:rr,entryDistancePct:entryDistance,setupGate,gateReason,decisionGate,setupQualityScore,setupQualityGrade,qualityBreakdown:qualityParts,marketAlignment};
+      return {...x,marketRegime:marketRegime.regime,marketRegimeConfidence:marketRegime.confidence,adaptiveAllowed,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading),fundamentals:fund,compositeScore:composite,riskReward:rr,entryDistancePct:entryDistance,setupGate,gateReason,decisionGate,setupQualityScore,setupQualityGrade,qualityBreakdown:qualityParts,marketAlignment};
     });
     results.sort((a,b)=>b.setupQualityScore-a.setupQualityScore||b.compositeScore-a.compositeScore);
-    return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,benchmark:{name:"NIFTY 50",returnPct:benchmarkReturn},institutional:fiiDii,sectorStats,results,qualityModel:{maxScore:100,grades:"A+ >=90, A >=80, B >=70, C >=60, D <60",hardGateIndependent:true},tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
+    return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,benchmark:{name:"NIFTY 50",returnPct:benchmarkReturn},institutional:fiiDii,sectorStats,marketRegime,results,qualityModel:{maxScore:100,grades:"A+ >=90, A >=80, B >=70, C >=60, D <60",hardGateIndependent:true},tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
       volume:"Today volume / prior 20 completed daily bars",
       breakout:"LTP above prior 20-day high",
       consolidation:"Prior 20-day range <= 12%",
       rsi:"14-period daily RSI, preferred 60–80",
       news:"Upstox news from past 7 days; keyword tags are heuristic",
       fii_dii:"Market-wide institutional flow is not treated as stock-specific interest in this scanner.",
-      finalGate:"READY requires composite >=9 plus breakout+volume+RSI, no chase, entry not >0.75% above zone, and minimum 1:2 R:R.",
+      finalGate:"READY requires composite >=9 plus breakout+volume+RSI, no chase, entry not >0.75% above zone, minimum 1:2 R:R, and alignment with the current market regime.",
       qualityScore:"/100 ranking combines technical structure, market/sector alignment, fundamentals, tradeability, news and institutional context. It is descriptive, not predictive, and cannot override the hard gate.",
       fundamentals:"Shareholding is quarterly; corporate actions are event-based; key ratios are descriptive context, not a trade trigger."
     }});
