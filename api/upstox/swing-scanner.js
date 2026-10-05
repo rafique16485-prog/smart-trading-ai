@@ -29,7 +29,8 @@ function request(url,token,headers={}){
   });
 }
 function csvRows(text){
-  const lines=String(text).replace(/^\uFEFF/,"").split(/\r?\n/).filter(Boolean);
+  const lines=String(text).replace(/^\uFEFF/,"").split(/\r?
+/).filter(Boolean);
   if(!lines.length)return [];
   const parse=line=>{
     const out=[];let cur="",q=false;
@@ -78,7 +79,8 @@ function newsImpact(items){
 module.exports=async(req,res)=>{
   res.setHeader("Cache-Control","no-store");
   if(req.method!=="GET")return res.status(405).json({error:"Method not allowed"});
-  const jar=parseCookies(req);\n  const token=jar.upstox_access_token||jar.upstox_extended_token;
+  const jar=parseCookies(req);
+  const token=jar.upstox_access_token||jar.upstox_extended_token;
   if(!token)return res.status(401).json({connected:false,error:"Upstox not connected"});
   const universe=String(req.query?.universe||"both").toLowerCase();
   try{
