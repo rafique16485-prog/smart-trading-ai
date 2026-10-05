@@ -11,7 +11,7 @@ function getJson(url, token) {
   const tokens=Array.isArray(token)?token.filter(Boolean):[token];
   return new Promise((resolve, reject) => {
     const attempt=(idx)=>new Promise((resolve,reject)=>{const req = https.get(url, {
-      headers: { Accept: "application/json", Authorization: "Bearer " + token }
+      headers: { Accept: "application/json", Authorization: "Bearer " + tokens[idx] }
     }, res => {
       let body = "";
       res.on("data", chunk => body += chunk);
