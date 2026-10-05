@@ -10,8 +10,10 @@ function parseCookies(req){
   return out;
 }
 function request(url,token,headers={}){
-  return new Promise((resolve,reject)=>{
-    const req=https.get(url,{headers:{Accept:"application/json",Authorization:"Bearer "+token,...headers}},res=>{
+  const tokens=Array.isArray(token)?token.filter(Boolean):[token];
+  const attempt=(idx)=>new Promise((resolve,reject)=>{
+    if(idx>=tokens.length)return reject(new Error("Request failed"));
+    const req=https.get(url,{headers:{Accept:"application/json",Authorization:"Bearer "+tokens[idx],...headers}},res=>{
       const chunks=[];res.on("data",c=>chunks.push(c));res.on("end",()=>{
         const raw=Buffer.concat(chunks);
         let body=raw;
@@ -21,12 +23,16 @@ function request(url,token,headers={}){
         }catch(e){return reject(e)}
         const text=body.toString("utf8");
         let parsed;try{parsed=JSON.parse(text)}catch(e){parsed=text}
-        if(res.statusCode<200||res.statusCode>=300)return reject(new Error(parsed?.errors?.[0]?.message||parsed?.message||"Request failed ("+res.statusCode+")"));
+        if(res.statusCode<200||res.statusCode>=300){
+          if((res.statusCode===401||res.statusCode===403)&&idx+1<tokens.length)return attempt(idx+1).then(resolve).catch(reject);
+          return reject(new Error(parsed?.errors?.[0]?.message||parsed?.message||"Request failed ("+res.statusCode+")"));
+        }
         resolve(parsed);
       });
     });
-    req.on("error",reject);
+    req.on("error",e=>idx+1<tokens.length?attempt(idx+1).then(resolve).catch(reject):reject(e));
   });
+  return attempt(0);
 }
 function csvRows(text){
   const lines=String(text).replace(/^\uFEFF/,"").split(/\r?
@@ -80,8 +86,8 @@ module.exports=async(req,res)=>{
   res.setHeader("Cache-Control","no-store");
   if(req.method!=="GET")return res.status(405).json({error:"Method not allowed"});
   const jar=parseCookies(req);
-  const token=jar.upstox_access_token||jar.upstox_extended_token;
-  if(!token)return res.status(401).json({connected:false,error:"Upstox not connected"});
+  const token=[jar.upstox_access_token,jar.upstox_extended_token].filter(Boolean);
+  if(!token.length)return res.status(401).json({connected:false,error:"Upstox not connected"});
   const universe=String(req.query?.universe||"both").toLowerCase();
   try{
     const urls=[];
