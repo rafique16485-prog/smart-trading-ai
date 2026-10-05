@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   }
 
   const cookies = parseCookies(req.headers.cookie);
-  const token = cookies.upstox_access_token;
+  const token = cookies.upstox_access_token || cookies.upstox_extended_token;
 
   if (!token) {
     return res.status(401).json({
@@ -81,6 +81,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       connected: true,
       source: "Upstox V3",
+      token_type: cookies.upstox_access_token ? "access" : "extended",
       count: quotes.length,
       quotes
     });
