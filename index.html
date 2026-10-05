@@ -12763,4 +12763,84 @@ footer{background:#fff!important;color:#6b7280!important}
 .liveStatus.ok{background:#ecfdf5!important;color:#047857!important}.liveStatus.bad{background:#fef2f2!important;color:#b91c1c!important}
 @media(max-width:900px){.stLauncher{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}}
 @media(max-width:600px){header{position:sticky!important;top:0!important}.stBtn{height:52px!important}}
-</style></body></html>
+</style>
+<!-- SMART TRADING AI FINAL CORE V86 -->
+<style id="staFinalV86">
+#staFinalModules{display:grid;gap:12px;margin:12px 0}
+.staPanel{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.staPanel h2{margin:0 0 8px;font-size:20px}.staSub{font-size:12px;color:#6b7280;margin-bottom:10px}
+.staGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.staBox{border:1px solid #e5e7eb;border-radius:12px;padding:11px;background:#fafafa}.staBox b{display:block;font-size:11px;color:#6b7280}.staBox strong{display:block;margin-top:3px;font-size:16px}
+.staActions{display:flex;gap:7px;flex-wrap:wrap}.staActions button{margin:0}.staPrimary{background:#111827!important;color:#fff!important}.staWait{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:11px;border-radius:12px;font-weight:800}.staGood{background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;padding:11px;border-radius:12px;font-weight:800}.staBad{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:11px;border-radius:12px;font-weight:800}
+.staList{margin:8px 0 0;padding-left:18px}.staList li{margin:4px 0}
+#staCapitalResult{margin-top:10px}.staLock{font-weight:900;font-size:18px}
+@media(max-width:650px){.staGrid{grid-template-columns:1fr}.staActions{display:grid;grid-template-columns:1fr}.staActions button{width:100%}}
+</style>
+<script id="staFinalV86Script">
+(function(){
+const $=id=>document.getElementById(id);
+const esc=v=>String(v??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+function panel(id,title,sub,body){
+ return '<section id="'+id+'" class="staPanel"><h2>'+title+'</h2><div class="staSub">'+sub+'</div>'+body+'</section>';
+}
+function wa(text){window.open("https://wa.me/?text="+encodeURIComponent(text),"_blank","noopener,noreferrer")}
+function num(id){return Number($(id)?.value||0)}
+function inject(){
+ const old=document.querySelector(".stLauncher");
+ if(old) old.style.display="none";
+ if($("staFinalModules")) return;
+ const host=document.querySelector("main.wrap")||document.body;
+ const wrap=document.createElement("div");wrap.id="staFinalModules";
+ const nav=document.createElement("div");nav.className="staPanel";
+ nav.innerHTML='<h2>🚀 Smart Trading AI — FINAL CONTROL CENTER</h2><div class="staSub">8 focused modules • real data only • incomplete confirmation = WAIT</div><div class="staActions" id="staNav"></div>';
+ wrap.appendChild(nav);
+ const items=[
+ ["staIndex","📈 INDEX MASTER"],["staSwing","🔎 SWING SCANNER"],["staRegime","🌐 MARKET REGIME"],["staOption","⛓ PCR / OPTION CHAIN"],
+ ["staFii","🏦 FII / DII + VOLUME"],["staRisk","🛡️ RISK MANAGEMENT"],["staCapital","💰 CAPITAL MANAGEMENT"],["staPsych","🧠 PSYCHOLOGY"]
+ ];
+ items.forEach(([id,t])=>{const b=document.createElement("button");b.textContent=t;b.onclick=()=>$(id)?.scrollIntoView({behavior:"smooth"});$("staNav")?.appendChild(b)});
+ const indexBody='<div class="staGrid"><div class="staBox"><b>NIFTY 50</b><strong id="staNifty">WAIT</strong></div><div class="staBox"><b>BANK NIFTY</b><strong id="staBank">WAIT</strong></div><div class="staBox"><b>SENSEX</b><strong id="staSensex">WAIT</strong></div></div><div id="staIndexGate" class="staWait" style="margin-top:10px">WAIT — live confirmation required (VWAP + 5M/15M structure + volume + option data).</div><ul class="staList"><li>VWAP + EMA 20/50</li><li>HH-HL / LH-LL + PDH/PDL</li><li>Breakout → pullback → retest + volume</li><li>ATR/volatility + minimum 1:2 R:R</li></ul><div class="staActions"><button onclick="staRefreshIndex()">🔄 Refresh Live Data</button><button onclick="staShareIndex()">📲 WhatsApp</button></div>';
+ const swingBody='<div class="staWait">SWING SCANNER uses the existing Upstox scanner. No stock/result is invented here.</div><div class="staActions" style="margin-top:10px"><button onclick="document.getElementById(\'swingScanner75\')?.scrollIntoView({behavior:\'smooth\'})">🔎 Open Full Swing Scanner</button><button onclick="staShareSwing()">📲 Share Top Results</button></div>';
+ const regimeBody='<div class="staGrid"><div class="staBox"><b>REGIME</b><strong id="staRegimeValue">WAIT</strong></div><div class="staBox"><b>RULE</b><strong>≥4 confirmations</strong></div><div class="staBox"><b>R:R</b><strong>≥ 1:2</strong></div></div><div class="staWait" style="margin-top:10px">TRENDING → trend setup • RANGE → no forced breakout • REVERSAL/HIGH RISK → reduce risk / WAIT.</div>';
+ const optionBody='<div class="staGrid"><div class="staBox"><b>PCR</b><strong id="staPCR">WAIT</strong></div><div class="staBox"><b>OI SHIFT</b><strong id="staOI">WAIT</strong></div><div class="staBox"><b>BIAS</b><strong id="staOptionBias">WAIT</strong></div></div><div class="staWait" style="margin-top:10px">PCR + CE/PE OI + Change OI + IV + Price + VWAP + Structure must agree. Missing option-chain data = WAIT.</div>';
+ const fiiBody='<div class="staGrid"><div class="staBox"><b>FII NET</b><strong id="staFiiNet">WAIT</strong></div><div class="staBox"><b>DII NET</b><strong id="staDiiNet">WAIT</strong></div><div class="staBox"><b>VOLUME</b><strong id="staVolume">WAIT</strong></div></div><div class="staWait" style="margin-top:10px">Institutional flow is context, not a standalone entry trigger.</div>';
+ const riskBody='<div class="staGrid"><div class="staBox"><b>CAPITAL ₹</b><input id="staRiskCapital" type="number" placeholder="10000"></div><div class="staBox"><b>RISK % / TRADE</b><input id="staRiskPct" type="number" step="0.1" value="1"></div><div class="staBox"><b>SL POINTS / SHARE</b><input id="staRiskSl" type="number" step="0.01" placeholder="10"></div></div><div id="staRiskResult" class="staWait" style="margin-top:10px">Enter capital, risk % and SL distance.</div><div class="staActions"><button onclick="staCalcRisk()">🧮 Calculate Quantity</button><button onclick="staSaveRisk()">💾 Save Risk Rules</button></div><ul class="staList"><li>Maximum daily loss: 2% recommended ceiling</li><li>2 consecutive SL → mandatory pause</li><li>Never increase quantity to recover a loss</li></ul>';
+ const capBody='<div class="staGrid"><div class="staBox"><b>STARTING CAPITAL</b><input id="staStartCap" type="number" placeholder="10000"></div><div class="staBox"><b>CURRENT CAPITAL</b><input id="staCurrentCap" type="number" placeholder="10000"></div><div class="staBox"><b>DAILY MAX LOSS %</b><input id="staDailyLoss" type="number" value="2" step="0.1"></div></div><div id="staCapitalResult" class="staWait">Capital discipline is more important than daily profit.</div><div class="staActions"><button onclick="staCalcCapital()">📊 Check Capital Health</button><button onclick="staShareCapital()">📲 WhatsApp</button></div>';
+ const psychBody='<div class="staGrid"><div class="staBox"><b>FOMO</b><select id="staFomo"><option>NO</option><option>YES</option></select></div><div class="staBox"><b>REVENGE TRADE</b><select id="staRevenge"><option>NO</option><option>YES</option></select></div><div class="staBox"><b>EMOTIONAL</b><select id="staEmotion"><option>CALM</option><option>UNSTABLE</option></select></div></div><div id="staPsychResult" class="staGood" style="margin-top:10px">🟢 DISCIPLINE READY</div><div class="staActions"><button onclick="staPsychCheck()">🧠 Check Psychology</button><button onclick="staSharePsych()">📲 WhatsApp</button></div><ul class="staList"><li>FOMO → WAIT 5 minutes</li><li>Revenge feeling → STOP trading</li><li>After 2 SL → mandatory break</li><li>Follow the setup, not the P&amp;L</li></ul>';
+ wrap.insertAdjacentHTML("beforeend",panel("staIndex","📈 INDEX MASTER","NIFTY • BANK NIFTY • SENSEX — one unified setup",indexBody));
+ wrap.insertAdjacentHTML("beforeend",panel("staSwing","🔎 SWING SCANNER","AUTO SCAN → FILTER → RANK → TOP 5",swingBody));
+ wrap.insertAdjacentHTML("beforeend",panel("staRegime","🌐 MARKET REGIME","TRENDING • RANGE/SIDEWAYS • REVERSAL/HIGH RISK",regimeBody));
+ wrap.insertAdjacentHTML("beforeend",panel("staOption","⛓ PCR / OPTION CHAIN","PCR • OI • Change OI • IV • Price confirmation",optionBody));
+ wrap.insertAdjacentHTML("beforeend",panel("staFii","🏦 FII / DII + VOLUME","Institutional flow + market volume context",fiiBody));
+ wrap.insertAdjacentHTML("beforeend",panel("staRisk","🛡️ RISK MANAGEMENT","Protect capital before chasing profit",riskBody));
+ wrap.insertAdjacentHTML("beforeend",panel("staCapital","💰 CAPITAL MANAGEMENT","Capital growth + drawdown discipline",capBody));
+ wrap.insertAdjacentHTML("beforeend",panel("staPsych","🧠 PSYCHOLOGY BUILDUP","FOMO • revenge • overtrading • discipline",psychBody));
+ host.insertBefore(wrap,host.firstChild);
+}
+window.staCalcRisk=function(){
+ const c=num("staRiskCapital"),p=num("staRiskPct"),sl=num("staRiskSl"),risk=c*p/100,q=sl>0?Math.floor(risk/sl):0;
+ $("staRiskResult").className=q>0?"staGood":"staWait";$("staRiskResult").innerHTML=q>0?"MAX RISK ₹"+risk.toFixed(2)+" • MAX QUANTITY "+q:"Enter valid values.";
+};
+window.staSaveRisk=function(){localStorage.setItem("staRiskRules",JSON.stringify({capital:num("staRiskCapital"),riskPct:num("staRiskPct")}));alert("Risk rules saved.");};
+window.staCalcCapital=function(){
+ const s=num("staStartCap"),c=num("staCurrentCap"),d=num("staDailyLoss"),dd=s?((c-s)/s*100):0;
+ const ok=c>0&&d>0; $("staCapitalResult").className=ok&&dd>-10?"staGood":"staWait";
+ $("staCapitalResult").innerHTML=ok?"Capital change: "+dd.toFixed(2)+"% • Daily max-loss ceiling: ₹"+(c*d/100).toFixed(2):"Enter starting/current capital.";
+};
+function psych(){const bad=$("staFomo")?.value==="YES"||$("staRevenge")?.value==="YES"||$("staEmotion")?.value==="UNSTABLE";const r=$("staPsychResult");if(!r)return;r.className=bad?"staBad":"staGood";r.textContent=bad?"🔴 NO TRADE — PSYCHOLOGY LOCK":"🟢 DISCIPLINE READY";}
+window.staPsychCheck=psych;
+window.staShareCapital=()=>wa("💰 Smart Trading AI — Capital Management\nCurrent Capital: ₹"+num("staCurrentCap")+"\nDaily Max Loss: "+num("staDailyLoss")+"%\nCapital protection first.");
+window.staSharePsych=()=>wa("🧠 Smart Trading AI — Psychology\nFOMO: "+$("staFomo")?.value+"\nRevenge: "+$("staRevenge")?.value+"\nEmotion: "+$("staEmotion")?.value+"\nVerdict: "+($("staPsychResult")?.textContent||"WAIT"));
+window.staShareIndex=()=>wa("📈 Smart Trading AI — Index Master\nNIFTY: "+$("staNifty")?.textContent+"\nBANK NIFTY: "+$("staBank")?.textContent+"\nSENSEX: "+$("staSensex")?.textContent+"\nVerdict: "+($("staIndexGate")?.textContent||"WAIT"));
+window.staShareSwing=()=>wa("🔎 Smart Trading AI — Swing Scanner\nOpen the app and verify the live scanner result before trading.");
+window.staRefreshIndex=async function(){
+ try{
+  const r=await fetch("/api/upstox/quote",{cache:"no-store"});const d=await r.json();if(!r.ok)throw 0;
+  const raw=JSON.stringify(d);$("staNifty").textContent=raw.includes("NIFTY")?"LIVE":"DATA";$("staBank").textContent=raw.includes("BANK")?"LIVE":"DATA";$("staSensex").textContent=raw.includes("SENSEX")?"LIVE":"DATA";
+  $("staIndexGate").className="staWait";$("staIndexGate").textContent="LIVE DATA RECEIVED — CALL/PUT still WAIT until VWAP + structure + volume + option-chain confirmation is complete.";
+ }catch(e){$("staIndexGate").textContent="WAIT — live market data unavailable.";["staNifty","staBank","staSensex"].forEach(id=>$(id).textContent="WAIT");}
+};
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",inject);else inject();
+})();
+</script>
+
+</body></html>
