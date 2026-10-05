@@ -118,7 +118,12 @@ module.exports = async (req, res) => {
     const atr14=atr(ordered,14);
     const emaSpread=(ema20!=null&&ema50!=null&&atr14>0)?Math.abs(ema20-ema50)/atr14:null;
     let marketRegime="INSUFFICIENT DATA";
-    if(ema20!=null&&ema50!=null&&atr14!=null){
+    if(ema20!=null&&atr14!=null&&ema50==null&&ordered.length>=20){
+      if(structure==="HH-HL" && last.close>ema20) marketRegime="EARLY TREND UP";
+      else if(structure==="LH-LL" && last.close<ema20) marketRegime="EARLY TREND DOWN";
+      else if(structure==="MIXED") marketRegime="EARLY RANGE / TRANSITION";
+      else marketRegime="EARLY TRANSITION";
+    } else if(ema20!=null&&ema50!=null&&atr14!=null){
       if(structure==="HH-HL" && last.close>ema20 && ema20>ema50) marketRegime="TREND UP";
       else if(structure==="LH-LL" && last.close<ema20 && ema20<ema50) marketRegime="TREND DOWN";
       else if(emaSpread<0.35 && structure==="MIXED") marketRegime="RANGE";
@@ -147,6 +152,8 @@ module.exports = async (req, res) => {
       atr14,
       ema_spread_atr: emaSpread,
       market_regime: marketRegime,
+      regime_note: ema50==null && ordered.length<50 ? "EMA50 needs 50 five-minute candles; early-session regime uses EMA20 + structure + ATR only." : null,
+      index_volume_note: vwap==null ? "Index candle volume is unavailable/zero; VWAP and volume ratio are not used as confirmation." : null,
       chart_candles: ordered.slice(-60)
     });
   } catch (e) {
