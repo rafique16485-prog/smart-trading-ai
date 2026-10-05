@@ -134,16 +134,16 @@ const $=id=>document.getElementById(id);
 const fmt=v=>v==null?"WAIT":Number(v).toLocaleString("en-IN",{maximumFractionDigits:2});
 function setStatus(t,ok=false){$("status").textContent=(ok?"● ":"● ")+t;$("status").style.background=ok?"#083c24":"#4a3005";$("status").style.color=ok?"#8df0b9":"#ffd27a"}
 function pct(last,prev){return last!=null&&prev?((last-prev)/prev*100):null}
-function flatQuotes(d){return Array.isArray(d?.quotes)?d.quotes:[]}\nasync function checkConnection(){try{const r=await fetch("/api/upstox/status",{cache:"no-store"}),d=await r.json();if(d.connected){setStatus("CONNECTED",true);$("connectBtn").textContent="UPSTOX CONNECTED"}else{setStatus("WAIT");$("connectBtn").textContent="CONNECT UPSTOX"}}catch(e){setStatus("WAIT")}}\n$("connectBtn").onclick=()=>{window.location.href="/api/upstox/login"}
+function flatQuotes(d){return Array.isArray(d?.quotes)?d.quotes:[]}\nasync function checkConnection(){try{const r=await fetch("/api/upstox/status",{cache:"no-store"}),d=await r.json();if(d.connected){setStatus("LIVE",true);$("connectBtn").textContent="UPSTOX LIVE"}else{setStatus("WAIT");$("connectBtn").textContent="CONNECT UPSTOX";$("dataNote").textContent=d.reason==="token_expired"?"Upstox session expired • reconnect to refresh live data.":"Connect Upstox to receive verified live market data. No fake prices are shown."}}catch(e){setStatus("WAIT")}}\n$("connectBtn").onclick=()=>{window.location.href="/api/upstox/login"}
 async function loadQuotes(){
  try{
   const r=await fetch("/api/upstox/quote",{cache:"no-store"}),d=await r.json();if(!r.ok)throw new Error(d.error||"Upstox not connected");
-  const qs=flatQuotes(d);const find=s=>qs.find(x=>String(x.instrument_key||"").toLowerCase().includes(s));
+  const qs=flatQuotes(d);const norm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]/g,"");const find=s=>qs.find(x=>norm(x.instrument_key).includes(norm(s)));
   const n=find("nifty 50"),b=find("nifty bank"),s=find("sensex"),v=find("india vix");
   [["nifty",n],["bank",b],["sensex",s],["vix",v]].forEach(([id,q])=>{if(q){$(id).textContent=fmt(q.last_price);const p=pct(q.last_price,q.prev_close_price);$(id+"Ch").textContent=p==null?"—":(p>=0?"+":"")+p.toFixed(2)+"%";$(id+"Ch").className="change "+(p>=0?"green":"red")}});
   setStatus("LIVE",true);$("dataNote").textContent="Live verified quotes from Upstox V3.";$("dataNote").className="calc";
   if(n){const delta=pct(n.last_price,n.prev_close_price);const label=delta==null?"WAIT":delta>0.35?"BULLISH":delta<-0.35?"BEARISH":"RANGE";$("regime").textContent=label;$("regimeNote").textContent="Index move vs previous close: "+(delta==null?"WAIT":(delta>=0?"+":"")+delta.toFixed(2)+"%");if(label==="RANGE"){$("setupList").innerHTML="<li>VWAP + range high/low</li><li>Wait for volume expansion</li><li>No forced trade</li>"}else{$("setupList").innerHTML=label==="BULLISH"?"<li>Long only after VWAP/structure confirmation</li><li>Volume expansion required</li><li>Minimum 1:2 risk/reward</li>":"<li>Short only after VWAP/structure confirmation</li><li>Volume expansion required</li><li>Minimum 1:2 risk/reward</li>"}}
- }catch(e){setStatus("WAIT");$("dataNote").textContent=e.message+" • Connect Upstox first."}
+ }catch(e){setStatus("WAIT");$("dataNote").textContent=(e.message||"Live data unavailable")+" • Tap CONNECT UPSTOX and login again."}
 }
 function renderTop10(){
  const all=Array.isArray(window.lastScanResults)?window.lastScanResults:[];
