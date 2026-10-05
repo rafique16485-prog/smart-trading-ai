@@ -190,7 +190,7 @@ async function decision(){const b=$("decisionBtn");b.textContent="ANALYSING…";
 $("searchBtn").onclick=()=>aiSearch($("search").value);$("search").addEventListener("keydown",e=>{if(e.key==="Enter")aiSearch($("search").value)});
 document.querySelectorAll(".suggest button").forEach(b=>b.onclick=()=>{$("search").value=b.textContent;aiSearch(b.textContent)});
 function aiSearch(q){q=q.toLowerCase().trim();if(!q)return;let a="AI SEARCH: ";if(q.includes("risk"))a+="Use capital × risk% ÷ SL points for maximum quantity. Never exceed planned risk.";else if(q.includes("vwap"))a+="VWAP + 5-min structure + volume must confirm before an entry.";else if(q.includes("breakout"))a+="Breakout requires structure + volume confirmation; avoid chasing.";else if(q.includes("swing"))a+="Run the Auto Scanner and select only high-score verified candidates.";else a+="Matched '"+q+"'. Live data is required before BUY/SELL.";$("searchResult").textContent=a;$("searchResult").style.display="block"}
-document.querySelectorAll(".bottom button").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.to).scrollIntoView({behavior:"smooth",block:"start"}));
+document.querySelectorAll(".bottom button").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();const target=document.getElementById(b.dataset.to);if(!target)return;document.querySelectorAll(".bottom button").forEach(x=>x.classList.remove("active"));b.classList.add("active");const y=target.getBoundingClientRect().top+window.pageYOffset-66;window.scrollTo({top:Math.max(0,y),behavior:"smooth"});}));
 checkConnection();loadQuotes();flows();setInterval(loadQuotes,15000);setInterval(checkConnection,30000);
 </script>
 </body></html>
