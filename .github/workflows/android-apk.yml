@@ -17,12 +17,12 @@ jobs:
         with:
           gradle-version: "8.9"
       - name: Build release APK
-        run: gradle assembleRelease --no-daemon
+        run: gradle assembleDebug --no-daemon
       - name: Locate APK
         run: find app/build/outputs -type f -name "*.apk" -print
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Smart-Trading-AI-Android
-          path: app/build/outputs/**/*.apk
+          name: Smart-Trading-AI-Mobile
+          path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
