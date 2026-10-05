@@ -1,0 +1,10 @@
+{
+  "name":"Smart Trading AI — Zero to Expert Trading School",
+  "short_name":"Smart Trading AI",
+  "start_url":"/?source=pwa",
+  "display":"standalone",
+  "background_color":"#f5f7fa",
+  "theme_color":"#182230",
+  "description":"Educational market analysis and trading learning dashboard.",
+  "icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
