@@ -122,6 +122,7 @@ html,body{min-height:100%;overscroll-behavior-y:none}
 <section class="card" id="scanner"><div class="head"><span class="num">2</span> AUTO SCANNER — SWING TRADING</div><div class="body">
 <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:7px;margin-bottom:8px"><select class="input" id="universe"><option value="both">NIFTY 100 + MIDCAP 100</option><option value="nifty100">NIFTY 100</option><option value="midcap100">MIDCAP 100</option></select><select class="input" id="gateFilter"><option value="all">ALL RESULTS</option><option value="READY">READY ONLY</option><option value="WATCH">WATCH ONLY</option></select><button class="primary" id="scanBtn">RUN SCAN</button></div><div class="calc" id="scanMeta">READY • Verified data only • No prediction guarantee</div><div class="notice" style="margin-top:7px"><b>SCAN CONTROL:</b> Top 10 = ranked READY/WATCH setups by Setup Quality /100. <span id="scanClock">Manual scan</span> • Kill rule: close below invalidation or chase zone = NO TRADE.</div><div style="display:flex;gap:7px;margin:7px 0"><button class="primary" id="top10Btn">SHOW TOP 10</button><div class="calc" id="top10Meta" style="margin:0;flex:1">Top 10: WAIT</div></div><div class="tablewrap" id="top10Wrap" style="display:none;margin-bottom:9px"><table class="table"><thead><tr><th>#</th><th>Stock</th><th>Price</th><th>Gate</th><th>Quality</th><th>Score</th><th>Entry</th><th>SL</th><th>T1</th><th>T2</th><th>R:R</th><th>Hold</th><th>Why / Kill</th></tr></thead><tbody id="top10Body"></tbody></table></div>
 <div class="tablewrap"><table class="table"><thead><tr><th>Stock</th><th>Price</th><th>Setup</th><th>Gate</th><th>Score</th><th>Entry</th><th>SL</th><th>T1</th><th>T2</th><th>Exit</th></tr></thead><tbody id="scanBody"><tr><td colspan="10">WAIT — tap RUN SCAN</td></tr></tbody></table></div>
+<div class="panel" style="margin-top:9px"><div class="sectionTitle"><b>TRADE LAB — 100X JOURNAL</b><span class="pill" id="journalStats">0 tracked</span></div><div class="notice"><b>RULE:</b> Only READY setups can be tracked. Results are calculated from later verified scanner prices; no historical result is invented.</div><div style="display:flex;gap:7px;margin:7px 0;flex-wrap:wrap"><button class="primary" id="trackReadyBtn">TRACK READY TOP 10</button><button class="secondary" id="clearJournalBtn">CLEAR JOURNAL</button></div><div class="calc" id="journalSummary">Win rate: WAIT • Avg R: WAIT • Closed: 0</div><div class="tablewrap"><table class="table"><thead><tr><th>Stock</th><th>Entry</th><th>SL</th><th>T2</th><th>R</th><th>Status</th></tr></thead><tbody id="journalBody"><tr><td colspan="6">No tracked setups.</td></tr></tbody></table></div></div>
 </div></section>
 
 <section class="card" id="setup"><div class="head"><span class="num">3</span> SETUP — MARKET REGIME</div><div class="body">
@@ -189,13 +190,43 @@ async function scan(){
  $("scanBody").innerHTML="<tr><td colspan='10'>SCANNING… 100+ equity candidates • verified market data only</td></tr>";
  $("scanMeta").textContent="SCANNING • Technical + volume + RSI + trend + relative strength + news/fundamental context";
  try{const r=await fetch("/api/upstox/swing-scanner?universe="+encodeURIComponent($("universe").value),{cache:"no-store"}),d=await r.json();if(!r.ok)throw new Error(d.error||"Scanner unavailable");
- let rows=Array.isArray(d?.results)?d.results:(Array.isArray(d?.scans)?d.scans:[]); window.lastScanResults=rows; renderTop10(); const mr=d?.marketRegime||{}; $("scanMeta").textContent="REGIME: "+(mr.regime||"WAIT")+" • "+(mr.confidence||0)+"% confidence • "+(mr.allowedSetup||"WAIT");
+ let rows=Array.isArray(d?.results)?d.results:(Array.isArray(d?.scans)?d.scans:[]); window.lastScanResults=rows; renderTop10(); journalResolve(rows); const mr=d?.marketRegime||{}; $("scanMeta").textContent="REGIME: "+(mr.regime||"WAIT")+" • "+(mr.confidence||0)+"% confidence • "+(mr.allowedSetup||"WAIT");
  const gf=$("gateFilter").value;if(gf!=="all")rows=rows.filter(x=>String(x.decisionGate||"WAIT")===gf);
  if(!rows.length){$("scanBody").innerHTML="<tr><td colspan='10'>No verified candidates match this filter.</td></tr>";$("scanMeta").textContent="SCAN COMPLETE • No qualifying setup • WAIT";return}
  rows.sort((a,b)=>(b.setupQualityScore??-999)-(a.setupQualityScore??-999)||(b.compositeScore??-999)-(a.compositeScore??-999));
  $("scanMeta").textContent="SCAN COMPLETE • Universe: "+(d.universe||[]).join(" + ")+" • Constituents: "+fmt(d.scanned)+" • Technical shortlist: "+fmt(d.technicalShortlist)+" • Showing: "+rows.length; $("scanClock").textContent="Last scan: "+new Date().toLocaleTimeString("en-IN")+" • Next scan manual";
  $("scanBody").innerHTML=rows.slice(0,30).map(x=>{const gate=x.decisionGate||"WAIT",setup=x.trigger?"BREAKOUT":"WATCH",exit=x.invalidation!=null?"Close below SL / invalidation":"WAIT";const gateClass=gate==="READY"?"tagg":gate==="AVOID"?"tagr":gate==="WATCH"?"tagb":"tago";return "<tr><td><b>"+(x.symbol||"—")+"</b><br><span style='font-size:9px;color:#64748b'>"+(x.industry||"—")+"</span></td><td>"+fmt(x.ltp)+"<br><span class='"+(x.changePct>=0?"green":"red")+"'>"+(x.changePct>=0?"+":"")+Number(x.changePct||0).toFixed(2)+"%</span></td><td><span class='tag "+(x.trigger?"tagg":"tagb")+"'>"+setup+"</span></td><td><span class='tag "+gateClass+"'>"+gate+"</span></td><td><b>"+fmt(x.compositeScore)+"</b></td><td>"+fmt(x.entryLow)+"–"+fmt(x.entryHigh)+"</td><td>"+fmt(x.invalidation)+"</td><td>"+fmt(x.target1)+"</td><td>"+fmt(x.target2)+"</td><td>"+exit+"</td></tr>"}).join("");
  }catch(e){$("scanBody").innerHTML="<tr><td colspan='10'>WAIT — "+e.message+"</td></tr>";$("scanMeta").textContent="SCAN FAILED • No data invented"}}
+
+function journalLoad(){try{return JSON.parse(localStorage.getItem("smartTradingAIJournal")||"[]")}catch(e){return[]}}
+function journalSave(a){localStorage.setItem("smartTradingAIJournal",JSON.stringify(a))}
+function journalResolve(rows){
+ const j=journalLoad(); let changed=false;
+ j.forEach(t=>{if(t.status!=="OPEN")return; const x=rows.find(r=>r.key===t.key||r.symbol===t.symbol); if(!x||!Number.isFinite(Number(x.ltp)))return;
+   const p=Number(x.ltp);
+   if(Number.isFinite(t.target2)&&p>=t.target2){t.status="WIN";t.resultR=2;t.exit=p;t.closedAt=new Date().toISOString();changed=true}
+   else if(Number.isFinite(t.invalidation)&&p<=t.invalidation){t.status="LOSS";t.resultR=-1;t.exit=p;t.closedAt=new Date().toISOString();changed=true}
+ });
+ if(changed)journalSave(j); renderJournal();
+}
+function renderJournal(){
+ const j=journalLoad(), closed=j.filter(x=>x.status!=="OPEN"), wins=closed.filter(x=>x.status==="WIN").length;
+ const avg=closed.length?closed.reduce((s,x)=>s+Number(x.resultR||0),0)/closed.length:null;
+ $("journalStats").textContent=j.length+" tracked";
+ $("journalSummary").textContent="Win rate: "+(closed.length?(wins/closed.length*100).toFixed(0)+"%":"WAIT")+" • Avg R: "+(avg==null?"WAIT":avg.toFixed(2))+"R • Closed: "+closed.length+" • Open: "+j.filter(x=>x.status==="OPEN").length;
+ $("journalBody").innerHTML=j.slice().reverse().slice(0,20).map(t=>"<tr><td><b>"+(t.symbol||"—")+"</b></td><td>"+fmt(t.entry)+"</td><td>"+fmt(t.invalidation)+"</td><td>"+fmt(t.target2)+"</td><td>"+(t.resultR==null?"—":Number(t.resultR).toFixed(2)+"R")+"</td><td><span class='tag "+(t.status==="WIN"?"tagg":t.status==="LOSS"?"tagr":"tago")+"'>"+t.status+"</span></td></tr>").join("")||"<tr><td colspan='6'>No tracked setups.</td></tr>";
+}
+function trackReadyTop10(){
+ const rows=(window.lastScanResults||[]).filter(x=>x.decisionGate==="READY").slice(0,10), j=journalLoad();
+ rows.forEach(x=>{if(j.some(t=>t.key===x.key&&t.status==="OPEN"))return;
+   j.push({key:x.key,symbol:x.symbol,entry:Number(x.entryLow),invalidation:Number(x.invalidation),target2:Number(x.target2),riskReward:Number(x.riskReward||2),status:"OPEN",trackedAt:new Date().toISOString()});
+ });
+ journalSave(j);renderJournal();
+ $("journalSummary").textContent=rows.length?"READY setups tracked from verified scan.":"No READY setup available — WAIT.";
+}
+$("trackReadyBtn").onclick=trackReadyTop10;
+$("clearJournalBtn").onclick=()=>{if(confirm("Clear local Trade Lab journal?")){localStorage.removeItem("smartTradingAIJournal");renderJournal()}};
+renderJournal();
 
 async function chain(){
  $("chainBody").innerHTML="<tr><td colspan='5'>LOADING OPTION CHAIN…</td></tr>";
