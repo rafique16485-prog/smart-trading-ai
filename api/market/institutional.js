@@ -3,7 +3,7 @@ async function get(url,token){const r=await fetch(url,{headers:{Accept:"applicat
 export default async function handler(req,res){
  res.setHeader("Cache-Control","no-store");
  if(req.method!=="GET")return res.status(405).json({error:"Method not allowed"});
- const token=cookies(req.headers.cookie).upstox_access_token;
+ const token=cookies(req.headers.cookie).upstox_access_token||cookies(req.headers.cookie).upstox_extended_token;
  if(!token)return res.status(401).json({connected:false,error:"Upstox is not connected"});
  const date=new Date(Date.now()+330*60000).toISOString().slice(0,10);
  try{
