@@ -31,7 +31,7 @@ export default async function handler(req, res) {
   }
 
   const cookies = parseCookies(req.headers.cookie);
-  const token = cookies.upstox_access_token;
+  const token = cookies.upstox_access_token || cookies.upstox_extended_token;
 
   if (!token) {
     return res.status(401).json({ connected: false, error: "Upstox is not connected" });
@@ -61,6 +61,7 @@ export default async function handler(req, res) {
     if (!response.ok) {
       return res.status(response.status).json({
         connected: response.status !== 401,
+        token_type: cookies.upstox_access_token ? "access" : "extended",
         error: body?.errors || body?.message || "Upstox option chain request failed"
       });
     }
@@ -129,6 +130,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       connected: true,
       source: "Upstox Option Chain",
+      token_type: cookies.upstox_access_token ? "access" : "extended",
       instrument_key: instrumentKey,
       expiry: rows[0]?.expiry || expiry,
       spot,
