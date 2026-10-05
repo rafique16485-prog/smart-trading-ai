@@ -12170,7 +12170,8 @@ updateProgress();
  }
  window.loadVisualChart71=async function(){
    const u=el("v71Underlying").value;status("⏳ LOADING 5M…","");
-   try{const r=await fetch("/api/upstox/confluence?underlying="+encodeURIComponent(u)+"&interval=5",{cache:"no-store"});const d=await r.json();if(!d.count)throw new Error(d.message||d.error||"No intraday candles returned");render(d);el("v71Gate").innerHTML="📊 <b>VISUAL GATE: "+(d.above_vwap?"PRICE ABOVE VWAP":"PRICE BELOW VWAP")+"</b> — "+(d.structure_5m||"structure unavailable")+" • "+(d.candle_bias||"candle unavailable");status("🟢 CHART LIVE","ok");}
+   try{const r=await fetch("/api/upstox/confluence?underlying="+encodeURIComponent(u)+"&interval=5",{cache:"no-store"});const d=await r.json();if(!d.count)throw new Error(d.message||d.error||"No intraday candles returned");render(d);const vwapGate=d.vwap==null?"VWAP UNAVAILABLE":(d.above_vwap?"PRICE ABOVE VWAP":"PRICE BELOW VWAP");
+   el("v71Gate").innerHTML="📊 <b>VISUAL GATE: "+vwapGate+"</b> — "+(d.structure_5m||"structure unavailable")+" • "+(d.candle_bias||"candle unavailable");status("🟢 CHART LIVE","ok");}
    catch(e){el("v71Svg").innerHTML='<text x="450" y="210" text-anchor="middle" font-size="18" fill="#697586">WAIT • '+esc(e.message||"Data unavailable")+'</text>';set("v71Price","—");set("v71VWAP","—");set("v71Structure","—");set("v71Candle","—");set("v71Volume","—");set("v71Bars","—");el("v71Gate").innerHTML="📊 <b>VISUAL GATE: WAIT</b> — "+esc(e.message||"Required 5-minute data unavailable.");status("🟠 WAIT • DATA UNAVAILABLE","bad");}
  };
  setTimeout(()=>{if(typeof window.loadVisualChart71==="function")window.loadVisualChart71()},1600);
@@ -12188,7 +12189,7 @@ updateProgress();
    const r=await fetch("/api/upstox/confluence?underlying="+encodeURIComponent(u)+"&interval=5",{cache:"no-store"});const d=await r.json();
    if(!d.count)throw new Error(d.message||d.error||"No 5-minute candles returned");
    set("v72RegimeText",d.market_regime||"UNAVAILABLE");
-   set("v72RegimeReason",d.market_regime==="TREND UP"?"HH-HL + price above EMA20 + EMA20 above EMA50":d.market_regime==="TREND DOWN"?"LH-LL + price below EMA20 + EMA20 below EMA50":d.market_regime==="RANGE"?"Mixed structure + compressed EMA spread vs ATR":d.market_regime==="REVERSAL WATCH"?"Structure and EMA trend disagree": "Evidence is transitioning / insufficient for a clean regime.");
+   set("v72RegimeReason",d.regime_note|| (d.market_regime==="TREND UP"?"HH-HL + price above EMA20 + EMA20 above EMA50":d.market_regime==="TREND DOWN"?"LH-LL + price below EMA20 + EMA20 below EMA50":d.market_regime==="EARLY TREND UP"?"Early session: HH-HL + price above EMA20; EMA50 not yet available.":d.market_regime==="EARLY TREND DOWN"?"Early session: LH-LL + price below EMA20; EMA50 not yet available.":d.market_regime==="EARLY RANGE / TRANSITION"?"Early session: mixed structure; wait for more evidence.":d.market_regime==="RANGE"?"Mixed structure + compressed EMA spread vs ATR":d.market_regime==="REVERSAL WATCH"?"Structure and EMA trend disagree": "Evidence is transitioning / insufficient for a clean regime."));
    set("v72Price",nf(d.latest?.close));set("v72E20",nf(d.ema20));set("v72E50",nf(d.ema50));set("v72ATR",nf(d.atr14));set("v72Structure",d.structure_5m||"Unavailable");set("v72VWAP",nf(d.vwap));set("v72VR",d.volume_ratio==null?"Unavailable":nf(d.volume_ratio)+"×");set("v72VS",d.volume_state||"Unavailable");
    const ratio=Number(d.volume_ratio);const pct=!Number.isFinite(ratio)?0:Math.min(100,Math.max(5,ratio/1.5*100));el("v72VolFill").style.width=pct+"%";set("v72VolText",d.volume_ratio==null?"Volume unavailable":nf(d.volume_ratio)+"× average • "+(d.volume_state||"UNKNOWN"));
    el("v72Gate").innerHTML="📊 <b>GATE: "+(d.market_regime||"WAIT")+"</b> — "+(d.volume_state||"volume unavailable")+" volume state • "+(d.structure_5m||"structure unavailable");
@@ -12216,12 +12217,12 @@ updateProgress();
    const spot=n(od.spot),vwap=n(cd.vwap),reg=cd.market_regime||"INSUFFICIENT DATA",structure=cd.structure_5m||"MIXED",pcr=n(od.full_chain?.pcr);
    const pe=od.chain.reduce((s,x)=>s+Math.max(0,n(x.pe?.oi_change)||0),0),ce=od.chain.reduce((s,x)=>s+Math.max(0,n(x.ce?.oi_change)||0),0);
    const oi=pe>ce*1.25?"PUT-SIDE SUPPORT":ce>pe*1.15?"CALL-SIDE PRESSURE":"MIXED OI";
-   const bullish=reg==="TREND UP"|| (reg==="REVERSAL WATCH"&&structure==="HH-HL");
-   const bearish=reg==="TREND DOWN"|| (reg==="REVERSAL WATCH"&&structure==="LH-LL");
+   const bullish=reg==="TREND UP"||reg==="EARLY TREND UP"|| (reg==="REVERSAL WATCH"&&structure==="HH-HL");
+   const bearish=reg==="TREND DOWN"||reg==="EARLY TREND DOWN"|| (reg==="REVERSAL WATCH"&&structure==="LH-LL");
    const side=bullish&&!bearish?"CALL":bearish&&!bullish?"PUT":"WAIT";
    const above=cd.above_vwap===true,below=cd.above_vwap===false;
-   const aligned=(side==="CALL"&&above&&structure==="HH-HL")||(side==="PUT"&&below&&structure==="LH-LL");
-   const volOK=cd.volume_ratio!=null&&cd.volume_ratio>=1.15;
+   const aligned=(side==="CALL"&&structure==="HH-HL"&&(cd.vwap==null||above))||(side==="PUT"&&structure==="LH-LL"&&(cd.vwap==null||below));
+   const volOK=cd.volume_ratio==null ? true : cd.volume_ratio>=1.15;
    const supportive=(side==="CALL"&&oi==="PUT-SIDE SUPPORT")||(side==="PUT"&&oi==="CALL-SIDE PRESSURE");
    const evidence=(aligned?1:0)+(volOK?1:0)+(supportive?1:0);
    const rows=cd.chart_candles||[], recent=rows.slice(-8);
@@ -12496,5 +12497,16 @@ updateProgress();
  function mount(){const b=E("v79Summary");if(!b||E("v80Summary"))return;const d=document.createElement("div");d.id="v80Summary";d.style.cssText="margin-top:12px;padding:14px;border:1px solid #dbe3ec;border-radius:14px;background:#fff";d.innerHTML='<b>🎯 V80 — FINAL SMART SWING SCORECARD</b><div id="v80Text" class="small" style="margin-top:7px">Run scanner to calculate the combined evidence score.</div>';b.parentNode.insertBefore(d,b.nextSibling)}
  async function load(){mount();const o=E("v80Text");if(!o)return;try{const u=E("v75Universe")?.value||"both";const r=await fetch("/api/upstox/swing-scanner?universe="+encodeURIComponent(u),{cache:"no-store"}),d=await r.json(),a=(d.results||[]).slice(0,10);if(!a.length){o.textContent="No scanner results available.";return}o.innerHTML='<div style="overflow:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Stock</th><th>Score</th><th>Gate</th><th>Setup</th><th>RS</th><th>News</th></tr></thead><tbody>'+a.map(x=>'<tr><td>'+esc(x.symbol)+'</td><td>'+esc(x.compositeScore??"—")+'/11</td><td><b>'+esc(x.decisionGate||"WAIT")+'</b></td><td>'+esc(x.setup||"—")+'</td><td>'+esc(x.relativeStrength==null?"—":Number(x.relativeStrength).toFixed(2)+"%")+'</td><td>'+esc(x.news||"NONE")+'</td></tr>').join("")+'</tbody></table></div><small>V80 is an evidence score, not a guaranteed-return or prediction engine. Technical data remains primary.</small>'}catch(e){o.textContent="V80 unavailable — "+(e.message||"try again.")}}
  const old=window.runSwingScanner75;if(typeof old==="function")window.runSwingScanner75=async function(){const z=await old.apply(this,arguments);setTimeout(load,300);return z};setTimeout(mount,1200);
+})();
+</script><script>
+/* V81 DATA INTEGRITY NOTE */
+(function(){
+ function add(){
+  const r=document.getElementById("v72Regime");if(!r||document.getElementById("v81Note"))return;
+  const d=document.createElement("div");d.id="v81Note";d.className="small muted";d.style.cssText="margin-top:8px;padding:10px;border-radius:10px;background:#f8fafc";
+  d.textContent="V81: Early-session mode is active until 50 five-minute candles are available. For index data, unavailable volume/VWAP is never treated as bearish confirmation.";
+  r.parentNode.insertBefore(d,r.nextSibling);
+ }
+ setTimeout(add,1500);
 })();
 </script></body></html>
