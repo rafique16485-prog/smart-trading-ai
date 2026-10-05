@@ -254,6 +254,9 @@ module.exports=async(req,res)=>{
       const news=x.news?.flag;
       if(news==="NEGATIVE")s-=2;
       if(news==="MIXED")s-=1;
+      if(x.trigger)s+=1;
+      if(x.chase)s-=2;
+      if(x.relativeStrength!=null && x.relativeStrength<-1)s-=1;
       return s;
     };
     const results=scored.map(x=>{
@@ -262,7 +265,12 @@ module.exports=async(req,res)=>{
       const relativeStrength=benchmarkReturn!=null&&x.changePct!=null?x.changePct-benchmarkReturn:null;
       const fund=fundMap[x.isin]||{};
       const composite=finalScore({...x,fundamentals:fund,sectorAvgReturn:sector.avgReturn,relativeStrength,news:ni});
-      return {...x,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading),fundamentals:fund,compositeScore:composite,decisionGate:composite>=9?"READY":composite>=6?"WATCH":composite<=2?"AVOID":"WAIT"};
+      const rr=Number.isFinite(x.riskPerShare)&&x.riskPerShare>0?Number(((x.target2-x.entryLow)/x.riskPerShare).toFixed(2)):0;
+      const entryDistance=Number.isFinite(x.ltp)&&Number.isFinite(x.entryHigh)&&x.entryHigh>0?Number(((x.ltp-x.entryHigh)/x.entryHigh*100).toFixed(2)):null;
+      const setupGate=x.trigger&&!x.chase&&rr>=2&&(entryDistance==null||entryDistance<=0.75);
+      const gateReason=setupGate?"ENTRY + VOLUME + RSI + R:R PASS":x.chase?"CHASE FILTER":!x.trigger?"BREAKOUT/VOLUME/RSI INCOMPLETE":rr<2?"R:R < 1:2":"ENTRY TOO EXTENDED";
+      const decisionGate=setupGate&&composite>=9?"READY":composite>=6?"WATCH":composite<=2?"AVOID":"WAIT";
+      return {...x,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading),fundamentals:fund,compositeScore:composite,riskReward:rr,entryDistancePct:entryDistance,setupGate,gateReason,decisionGate};
     });
     return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,benchmark:{name:"NIFTY 50",returnPct:benchmarkReturn},institutional:fiiDii,sectorStats,results,tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
       volume:"Today volume / prior 20 completed daily bars",
@@ -271,6 +279,7 @@ module.exports=async(req,res)=>{
       rsi:"14-period daily RSI, preferred 60–80",
       news:"Upstox news from past 7 days; keyword tags are heuristic",
       fii_dii:"Market-wide institutional flow is not treated as stock-specific interest in this scanner.",
+      finalGate:"READY requires composite >=9 plus breakout+volume+RSI, no chase, entry not >0.75% above zone, and minimum 1:2 R:R."
       fundamentals:"Shareholding is quarterly; corporate actions are event-based; key ratios are descriptive context, not a trade trigger."
     }});
   }catch(e){return res.status(502).json({connected:true,error:e.message||"Swing scanner failed"})}
