@@ -16,7 +16,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
-    private static final String APP_URL = "https://smart-trading-ai-ashen.vercel.app/?app=android&v=90";
+    private static final String APP_URL = "https://smart-trading-ai-ashen.vercel.app/?app=android&v=91";
     private WebView web;
 
     @Override protected void onCreate(Bundle state) {
