@@ -11,7 +11,7 @@
 <style>
 :root{--navy:#071a33;--blue:#0b63ce;--sky:#eaf5ff;--line:#d7e5f2;--text:#102a43;--muted:#64748b;--green:#087a45;--red:#c6283d;--amber:#a86400;--card:#fff}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:linear-gradient(#eef8ff,#f8fbff);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
-button,input,select{font:inherit}button{cursor:pointer}.top{position:sticky;top:0;z-index:20;background:rgba(7,26,51,.97);color:#fff;border-bottom:1px solid #16375e}.topin{max-width:1180px;margin:auto;padding:10px 12px}.brand{display:flex;align-items:center;justify-content:space-between;gap:10px}.brandleft{display:flex;align-items:center;gap:10px}.logo{width:40px;height:40px;border-radius:10px;background:#fff}.name{font-size:20px;font-weight:950}.sub{font-size:10px;color:#b8d7f7}.status{padding:6px 9px;border-radius:999px;background:#083c24;color:#8df0b9;font-size:10px;font-weight:900}
+button,input,select{font:inherit}button{cursor:pointer}.top{position:sticky;top:0;z-index:20;background:rgba(7,26,51,.97);color:#fff;border-bottom:1px solid #16375e}.topin{max-width:1180px;margin:auto;padding:10px 12px}.brand{display:flex;align-items:center;justify-content:space-between;gap:10px}.brandleft{display:flex;align-items:center;gap:10px}.logo{width:40px;height:40px;border-radius:10px;background:#fff}.name{font-size:20px;font-weight:950}.sub{font-size:10px;color:#b8d7f7}.connect{padding:7px 10px;border:1px solid #3d6b9d;border-radius:9px;background:#0b63ce;color:#fff;font-size:10px;font-weight:900}.status{padding:6px 9px;border-radius:999px;background:#083c24;color:#8df0b9;font-size:10px;font-weight:900}
 .wrap{max-width:1180px;margin:auto;padding:10px}.search{background:#fff;border:1px solid var(--line);border-radius:15px;padding:10px;margin-bottom:9px;box-shadow:0 3px 12px #0b5a8d10}.searchrow{display:flex;gap:7px}.search input{flex:1;min-width:0;border:2px solid #bddcf4;border-radius:10px;padding:11px 12px;outline:0}.primary{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:0 14px;font-weight:900}.suggest{display:flex;gap:6px;overflow:auto;margin-top:7px}.suggest button{white-space:nowrap;border:1px solid var(--line);background:#f5fbff;border-radius:999px;padding:6px 9px;font-size:10px;font-weight:800;color:#245073}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.card{background:var(--card);border:1px solid var(--line);border-radius:15px;overflow:hidden;box-shadow:0 3px 12px #0b5a8d10}.full{grid-column:1/-1}.head{display:flex;align-items:center;gap:7px;padding:10px 12px;background:linear-gradient(90deg,#dff2ff,#f8fcff);color:#064495;font-size:15px;font-weight:950}.num{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--blue);color:#fff;font-size:11px}.body{padding:10px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.metric{border:1px solid #e1edf6;border-radius:11px;padding:9px;background:#fbfeff}.label{font-size:10px;font-weight:850;color:#41617d}.value{font-size:20px;font-weight:950;margin-top:2px}.change{font-size:10px;font-weight:800;margin-top:2px}.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}.blue{color:var(--blue)}
 .tablewrap{overflow:auto;border:1px solid #e1edf6;border-radius:10px}.table{width:100%;border-collapse:collapse;min-width:650px;font-size:11px}.table th,.table td{padding:7px 6px;border-bottom:1px solid #edf3f7;text-align:left;white-space:nowrap}.table th{background:#f4f9fd;color:#41617d}.tag{display:inline-block;padding:4px 7px;border-radius:7px;font-weight:900}.tagg{background:#dcf8e8;color:#087842}.tagr{background:#ffe2e7;color:#b51e36}.tago{background:#fff0ce;color:#9a6200}.tagb{background:#dceeff;color:#0758a6}
@@ -27,7 +27,7 @@ button,input,select{font:inherit}button{cursor:pointer}.top{position:sticky;top:
 </style>
 </head>
 <body>
-<header class="top"><div class="topin"><div class="brand"><div class="brandleft"><img class="logo" src="/icon.svg"><div><div class="name">SMART TRADING AI</div><div class="sub">ONE-PAGE TRADING CONTROL CENTER</div></div></div><div class="status" id="status">● WAIT</div></div></div></header>
+<header class="top"><div class="topin"><div class="brand"><div class="brandleft"><img class="logo" src="/icon.svg"><div><div class="name">SMART TRADING AI</div><div class="sub">ONE-PAGE TRADING CONTROL CENTER</div></div></div><div style="display:flex;align-items:center;gap:6px"><button class="connect" id="connectBtn">CONNECT UPSTOX</button><div class="status" id="status">● WAIT</div></div></div></div></header>
 <main class="wrap">
 <section class="search">
 <div class="searchrow"><input id="search" placeholder="🔎 Advanced AI Search — NIFTY, VWAP, breakout, risk..."><button class="primary" id="searchBtn">AI SEARCH</button></div>
@@ -46,19 +46,19 @@ button,input,select{font:inherit}button{cursor:pointer}.top{position:sticky;top:
 </section>
 
 <section class="card" id="scanner"><div class="head"><span class="num">2</span> AUTO SCANNER — SWING TRADING</div><div class="body">
-<div style="display:flex;gap:7px;margin-bottom:8px"><select class="input" id="universe"><option value="both">NIFTY 100 + MIDCAP 100</option><option value="nifty100">NIFTY 100</option><option value="midcap100">MIDCAP 100</option></select><button class="primary" id="scanBtn">RUN SCAN</button></div>
-<div class="tablewrap"><table class="table"><thead><tr><th>Stock</th><th>Price</th><th>Setup</th><th>Score</th><th>Entry</th><th>SL</th><th>T1</th></tr></thead><tbody id="scanBody"><tr><td colspan="7">WAIT — tap RUN SCAN</td></tr></tbody></table></div>
+<div style="display:flex;gap:7px;margin-bottom:8px"><select class="input" id="universe"><option value="both">NIFTY 100 + MIDCAP 100</option><option value="nifty100">NIFTY 100</option><option value="midcap100">MIDCAP 100</option></select><button class="primary" id="scanBtn">RUN SCAN</button></div><div class="calc" id="scanMeta">READY • Verified data only • No prediction guarantee</div>
+<div class="tablewrap"><table class="table"><thead><tr><th>Stock</th><th>Price</th><th>Setup</th><th>Gate</th><th>Score</th><th>Entry</th><th>SL</th><th>T1</th></tr></thead><tbody id="scanBody"><tr><td colspan="8">WAIT — tap RUN SCAN</td></tr></tbody></table></div>
 </div></section>
 
 <section class="card" id="setup"><div class="head"><span class="num">3</span> SETUP — MARKET REGIME</div><div class="body">
-<div class="regime"><div class="box"><div class="label">REGIME</div><div class="big" id="regime">WAIT</div><div class="change">Verified data only</div></div>
+<div class="regime"><div class="box"><div class="label">REGIME</div><div class="big" id="regime">WAIT</div><div class="change" id="regimeNote">Verified data only</div></div>
 <div class="box"><div class="label">ALLOWED SETUP</div><ul class="list" id="setupList"><li>VWAP + price structure</li><li>Volume confirmation</li><li>Minimum 1:2 risk/reward</li></ul></div></div>
 <div class="verdict" style="margin-top:8px"><div class="label">FINAL VERDICT</div><strong id="verdict">WAIT</strong><div class="change">If confirmation is incomplete → WAIT.</div><div class="factors"><span class="factor">PRICE ACTION</span><span class="factor">VWAP</span><span class="factor">STRUCTURE</span><span class="factor">OI/PCR</span><span class="factor">VOLUME</span></div></div>
 </div></section>
 
 <section class="card" id="pcr"><div class="head"><span class="num">4</span> PCR RATIO + VOLUME BAR</div><div class="body">
 <div style="display:flex;gap:7px;margin-bottom:8px"><select class="input" id="underlying"><option value="nifty">NIFTY 50</option><option value="banknifty">BANK NIFTY</option></select><button class="primary" id="chainBtn">LOAD OPTION CHAIN</button></div>
-<div class="pcrgrid"><div class="box"><div class="label">PCR RATIO</div><div class="pcrbig" id="pcrVal">WAIT</div><span class="tag tagb" id="pcrBias">DATA</span><div class="change">Full chain verified value</div></div><div class="box"><div class="label">VOLUME</div><div class="bars" id="volBars"><i class="bar"></i><i class="bar r"></i><i class="bar g"></i><i class="bar"></i><i class="bar g"></i><i class="bar r"></i><i class="bar g"></i><i class="bar"></i></div><div class="change">Visual only until live volume data arrives</div></div></div>
+<div class="pcrgrid"><div class="box"><div class="label">PCR RATIO</div><div class="pcrbig" id="pcrVal">WAIT</div><span class="tag tagb" id="pcrBias">DATA</span><div class="change" id="pcrNote">Full chain verified value</div></div><div class="box"><div class="label">LIVE OPTION VOLUME</div><div class="bars" id="volBars"><i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i><i class="bar"></i></div><div class="change" id="volNote">Load option chain for live CE/PE volume</div></div></div>
 <div class="tablewrap" style="margin-top:9px"><table class="table"><thead><tr><th>Strike</th><th>CE OI</th><th>CE ΔOI</th><th>PE OI</th><th>PE ΔOI</th></tr></thead><tbody id="chainBody"><tr><td colspan="5">WAIT — load option chain</td></tr></tbody></table></div>
 </div></section>
 
@@ -82,30 +82,30 @@ const $=id=>document.getElementById(id);
 const fmt=v=>v==null?"WAIT":Number(v).toLocaleString("en-IN",{maximumFractionDigits:2});
 function setStatus(t,ok=false){$("status").textContent=(ok?"● ":"● ")+t;$("status").style.background=ok?"#083c24":"#4a3005";$("status").style.color=ok?"#8df0b9":"#ffd27a"}
 function pct(last,prev){return last!=null&&prev?((last-prev)/prev*100):null}
-function flatQuotes(d){return Array.isArray(d?.quotes)?d.quotes:[]}
+function flatQuotes(d){return Array.isArray(d?.quotes)?d.quotes:[]}\nasync function checkConnection(){try{const r=await fetch("/api/upstox/status",{cache:"no-store"}),d=await r.json();if(d.connected){setStatus("CONNECTED",true);$("connectBtn").textContent="UPSTOX CONNECTED"}else{setStatus("WAIT");$("connectBtn").textContent="CONNECT UPSTOX"}}catch(e){setStatus("WAIT")}}\n$("connectBtn").onclick=()=>{window.location.href="/api/upstox/login"}
 async function loadQuotes(){
  try{
   const r=await fetch("/api/upstox/quote",{cache:"no-store"}),d=await r.json();if(!r.ok)throw new Error(d.error||"Upstox not connected");
-  const qs=flatQuotes(d);const find=s=>qs.find(x=>x.instrument_key.toLowerCase().includes(s));
+  const qs=flatQuotes(d);const find=s=>qs.find(x=>String(x.instrument_key||"").toLowerCase().includes(s));
   const n=find("nifty 50"),b=find("nifty bank"),s=find("sensex"),v=find("india vix");
   [["nifty",n],["bank",b],["sensex",s],["vix",v]].forEach(([id,q])=>{if(q){$(id).textContent=fmt(q.last_price);const p=pct(q.last_price,q.prev_close_price);$(id+"Ch").textContent=p==null?"—":(p>=0?"+":"")+p.toFixed(2)+"%";$(id+"Ch").className="change "+(p>=0?"green":"red")}});
   setStatus("LIVE",true);$("dataNote").textContent="Live verified quotes from Upstox V3.";$("dataNote").className="calc";
-  if(n){$("regime").textContent=(n.last_price>n.prev_close_price?"BULLISH BIAS":"BEARISH BIAS");}
+  if(n){const delta=pct(n.last_price,n.prev_close_price);const label=delta==null?"WAIT":delta>0.35?"BULLISH":delta<-0.35?"BEARISH":"RANGE";$("regime").textContent=label;$("regimeNote").textContent="Index move vs previous close: "+(delta==null?"WAIT":(delta>=0?"+":"")+delta.toFixed(2)+"%");if(label==="RANGE"){$("setupList").innerHTML="<li>VWAP + range high/low</li><li>Wait for volume expansion</li><li>No forced trade</li>"}else{$("setupList").innerHTML=label==="BULLISH"?"<li>Long only after VWAP/structure confirmation</li><li>Volume expansion required</li><li>Minimum 1:2 risk/reward</li>":"<li>Short only after VWAP/structure confirmation</li><li>Volume expansion required</li><li>Minimum 1:2 risk/reward</li>"}}
  }catch(e){setStatus("WAIT");$("dataNote").textContent=e.message+" • Connect Upstox first."}
 }
 async function scan(){
- $("scanBody").innerHTML="<tr><td colspan='7'>SCANNING… verified market data only</td></tr>";
+ $("scanBody").innerHTML="<tr><td colspan='8'>SCANNING… verified market data only</td></tr>";
  try{const r=await fetch("/api/upstox/swing-scanner?universe="+encodeURIComponent($("universe").value),{cache:"no-store"}),d=await r.json();if(!r.ok)throw new Error(d.error||"Scanner unavailable");
  const rows=Array.isArray(d?.results)?d.results:(Array.isArray(d?.scans)?d.scans:[]);
- if(!rows.length){$("scanBody").innerHTML="<tr><td colspan='7'>No verified candidates returned.</td></tr>";return}
+ if(!rows.length){$("scanBody").innerHTML="<tr><td colspan='8'>No verified candidates returned.</td></tr>";return}
  $("scanBody").innerHTML=rows.slice(0,20).map(x=>{const setup=x.trigger?"BREAKOUT":"WATCH";return "<tr><td><b>"+(x.symbol||"—")+"</b></td><td>"+fmt(x.ltp)+"</td><td><span class='tag "+(x.trigger?"tagg":"tagb")+"'>"+setup+"</span></td><td>"+(x.score??"—")+"</td><td>"+fmt(x.entryLow)+"</td><td>"+fmt(x.invalidation)+"</td><td>"+fmt(x.target1)+"</td></tr>"}).join("");
- }catch(e){$("scanBody").innerHTML="<tr><td colspan='7'>WAIT — "+e.message+"</td></tr>"}
+ }catch(e){$("scanBody").innerHTML="<tr><td colspan='8'>WAIT — "+e.message+"</td></tr>"}
 }
 async function chain(){
  $("chainBody").innerHTML="<tr><td colspan='5'>LOADING OPTION CHAIN…</td></tr>";
  try{const r=await fetch("/api/upstox/option-chain?underlying="+$("underlying").value+"&expiry=current_week",{cache:"no-store"}),d=await r.json();if(!r.ok)throw new Error(d.error||"Option chain unavailable");
- $("pcrVal").textContent=fmt(d?.full_chain?.pcr);const p=Number(d?.full_chain?.pcr);$("pcrBias").textContent=Number.isFinite(p)?(p>1?"PUT OI > CALL OI":p<1?"CALL OI > PUT OI":"BALANCED"):"DATA";
- const rows=Array.isArray(d.chain)?d.chain:[];$("chainBody").innerHTML=rows.map(x=>"<tr><td><b>"+fmt(x.strike)+"</b></td><td>"+fmt(x.ce.oi)+"</td><td>"+fmt(x.ce.oi_change)+"</td><td>"+fmt(x.pe.oi)+"</td><td>"+fmt(x.pe.oi_change)+"</td></tr>").join("")||"<tr><td colspan='5'>No chain rows.</td></tr>";
+ $("pcrVal").textContent=fmt(d?.full_chain?.pcr);const p=Number(d?.full_chain?.pcr);$("pcrBias").textContent=Number.isFinite(p)?(p>1?"PUT OI > CALL OI":p<1?"CALL OI > PUT OI":"BALANCED"):"DATA";$("pcrNote").textContent="Expiry: "+(d.expiry||"current week")+" • ATM: "+fmt(d.atm_strike);
+ const rows=Array.isArray(d.chain)?d.chain:[];const vmax=Math.max(1,...rows.flatMap(x=>[Number(x?.ce?.volume)||0,Number(x?.pe?.volume)||0]));$("volBars").innerHTML=rows.slice(0,8).map(x=>{const cv=Number(x?.ce?.volume)||0,pv=Number(x?.pe?.volume)||0,h=Math.max(cv,pv)/vmax*100;return "<i class=\"bar \" style=\"height:"+Math.max(8,h)+"%\" title=\"Strike "+fmt(x.strike)+" CE "+fmt(cv)+" / PE "+fmt(pv)+"\"></i>"}).join("");$("volNote").textContent=rows.length?"ATM-window CE/PE volume • taller = higher volume":"No live volume";$("chainBody").innerHTML=rows.map(x=>"<tr><td><b>"+fmt(x.strike)+"</b></td><td>"+fmt(x.ce.oi)+"</td><td>"+fmt(x.ce.oi_change)+"</td><td>"+fmt(x.pe.oi)+"</td><td>"+fmt(x.pe.oi_change)+"</td></tr>").join("")||"<tr><td colspan='5'>No chain rows.</td></tr>";
  if(Number.isFinite(p)&&p>1.1)$("verdict").textContent="CALL/PUT CONTEXT — WAIT FOR PRICE ACTION";else if(Number.isFinite(p)&&p<0.9)$("verdict").textContent="CALL/PUT CONTEXT — WAIT FOR PRICE ACTION";else $("verdict").textContent="WAIT";
  }catch(e){$("chainBody").innerHTML="<tr><td colspan='5'>WAIT — "+e.message+"</td></tr>";$("pcrVal").textContent="WAIT"}
 }
@@ -126,6 +126,6 @@ $("searchBtn").onclick=()=>aiSearch($("search").value);$("search").addEventListe
 document.querySelectorAll(".suggest button").forEach(b=>b.onclick=()=>{$("search").value=b.textContent;aiSearch(b.textContent)});
 function aiSearch(q){q=q.toLowerCase().trim();if(!q)return;let a="AI SEARCH: ";if(q.includes("risk"))a+="Use capital × risk% ÷ SL points for maximum quantity. Never exceed planned risk.";else if(q.includes("vwap"))a+="VWAP + 5-min structure + volume must confirm before an entry.";else if(q.includes("breakout"))a+="Breakout requires structure + volume confirmation; avoid chasing.";else if(q.includes("swing"))a+="Run the Auto Scanner and select only high-score verified candidates.";else a+="Matched '"+q+"'. Live data is required before BUY/SELL.";$("searchResult").textContent=a;$("searchResult").style.display="block"}
 document.querySelectorAll(".bottom button").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.to).scrollIntoView({behavior:"smooth",block:"start"}));
-loadQuotes();setInterval(loadQuotes,15000);
+checkConnection();loadQuotes();flows();setInterval(loadQuotes,15000);setInterval(checkConnection,30000);
 </script>
 </body></html>
