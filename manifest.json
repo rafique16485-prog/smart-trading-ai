@@ -1,10 +1,10 @@
 {
-  "name":"Smart Trading AI — Zero to Expert Trading School",
+  "name":"Smart Trading AI",
   "short_name":"Smart Trading AI",
   "start_url":"/?source=pwa",
   "display":"standalone",
-  "background_color":"#f5f7fa",
-  "theme_color":"#182230",
-  "description":"Educational market analysis and trading learning dashboard.",
+  "background_color":"#eef8ff",
+  "theme_color":"#071a33",
+  "description":"One-page market dashboard with verified index, swing scanner, market regime, PCR, volume and FII/DII data.",
   "icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
 }
