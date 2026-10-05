@@ -103,7 +103,7 @@ module.exports=async(req,res)=>{
     const quoteBody=await request("https://api.upstox.com/v3/market-quote/quotes?instrument_key="+keys.map(encodeURIComponent).join(","),token);
     const qdata=quoteBody?.data||{};
     const candidates=universeRows.map(x=>{
-      const key="NSE_EQ:"+x.isin, q=qdata[key];
+      const key="NSE_EQ|"+x.isin, q=qdata[key];
       if(!q)return null;
       const ltp=num(q.last_price),vol=num(q.volume),pc=num(q.prev_close_price),dayHigh=num(q.ohlc?.high),dayLow=num(q.ohlc?.low);
       return {...x,key:key.replace(":", "|"),ltp,vol,pc,dayHigh,dayLow,changePct:ltp!=null&&pc?((ltp-pc)/pc)*100:0,turnover:ltp&&vol?ltp*vol:0};
@@ -253,7 +253,7 @@ module.exports=async(req,res)=>{
       const sector=sectorStats[x.industry||"UNKNOWN"]||{avgReturn:0,count:0,breakouts:0};
       const relativeStrength=benchmarkReturn!=null&&x.changePct!=null?x.changePct-benchmarkReturn:null;
       const fund=fundMap[x.isin]||{};
-      const composite=finalScore({...x,fundamentals:fund,sectorAvgReturn:sector.avgReturn,relativeStrength});,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,compositeScore:composite,decisionGate:composite>=9?"READY":composite>=6?"WATCH":composite<=2?"AVOID":"WAIT",newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading)};
+      const composite=finalScore({...x,fundamentals:fund,sectorAvgReturn:sector.avgReturn,relativeStrength,news:ni});\n      return {...x,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading),fundamentals:fund,compositeScore:composite,decisionGate:composite>=9?"READY":composite>=6?"WATCH":composite<=2?"AVOID":"WAIT"};
     });
     return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,benchmark:{name:"NIFTY 50",returnPct:benchmarkReturn},institutional:fiiDii,sectorStats,results,tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
       volume:"Today volume / prior 20 completed daily bars",
