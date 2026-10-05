@@ -76,7 +76,20 @@ button,input,select{font:inherit}button{cursor:pointer}
  .table{min-width:620px;font-size:9px}.table th,.table td{padding:5px}.notice,.calc{font-size:9px}.primary{font-size:10px}
  .regime{grid-template-columns:1fr}.pcrgrid{grid-template-columns:1fr 1fr}.pcrbig{font-size:25px}.actions{grid-template-columns:1fr}.action{padding:9px}
 }
-</style>
+<style>
+/* Smart Trading AI mobile reliability + native-style shell */
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{font-family:Inter,Roboto,Arial,Helvetica,sans-serif!important}
+.top{background:linear-gradient(135deg,#041b48,#075dcc)}
+.name{letter-spacing:.8px}
+.status{min-width:64px;text-align:center}
+.bottom{height:66px;grid-template-columns:repeat(8,minmax(0,1fr));overflow-x:auto;overflow-y:hidden}
+.bottom button{min-width:72px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.bottom b{font-size:18px}
+.bottom .active{box-shadow:inset 0 -3px 0 #fff}
+@media(max-width:760px){.bottom{height:66px}.bottom button{font-size:8px;min-width:66px}.wrap{padding-bottom:82px}}
+@media(max-width:480px){.bottom{height:64px}.bottom button{min-width:64px}.bottom b{font-size:17px}.wrap{padding-bottom:80px}}
+</style></style>
 </head>
 <body>
 <header class="top"><div class="topin"><div class="brand"><div class="brandleft"><img class="logo" src="/icon.svg"><div><div class="name">SMART TRADING AI</div><div class="sub">ONE-PAGE TRADING CONTROL CENTER</div></div></div><div style="display:flex;align-items:center;gap:6px"><button class="connect" id="connectBtn">CONNECT UPSTOX</button><div class="status" id="status">● WAIT</div></div></div></div></header>
@@ -119,16 +132,17 @@ button,input,select{font:inherit}button{cursor:pointer}
 <div class="flowbox dii"><b>DII</b><div class="value" id="dii">WAIT</div><div class="progress"><i id="diiBar"></i></div></div></div>
 <div class="calc" id="flowNote">Data will be shown only when the verified Upstox endpoint returns it.</div></div></section>
 
-<section class="card"><div class="head">TOOLS — RISK + CAPITAL</div><div class="body">
+<section class="card full" id="toolsRisk"><div class="head"><span class="num">9</span> RISK MANAGEMENT + CAPITAL</div><div class="body">
 <div class="inputs"><input class="input" id="capital" type="number" placeholder="Capital ₹"><input class="input" id="riskPct" type="number" value="1" placeholder="Risk %"><input class="input" id="slPoints" type="number" placeholder="SL points"><input class="input" id="entry" type="number" placeholder="Entry ₹"></div>
 <div class="calc" id="riskOut">Max risk: WAIT • Quantity: WAIT • Minimum R:R: 1:2</div>
 </div></section>
 
-<section class="card"><div class="head">TOOLS — WHATSAPP</div><div class="body"><div class="actions"><button class="action g" id="shareTrade">Share Trade</button><button class="action" id="shareSummary">Share Summary</button><button class="action o" id="shareScan">Share Swing</button></div></div></section>
+<section class="card" id="shareTools"><div class="head"><span class="num">8</span> WHATSAPP SHARING</div><div class="body"><div class="actions"><button class="action g" id="shareTrade">Share Trade Setup</button><button class="action" id="shareSummary">Share Market Summary</button><button class="action o" id="shareScan">Share Swing Picks</button></div><div class="calc" id="shareNote">Tap any button to share verified data. No invented prices.</div></div></section>
 </div>
+<section class="card full" id="psychology"><div class="head"><span class="num">10</span> PSYCHOLOGY & DISCIPLINE</div><div class="body"><div class="regime"><div class="box"><div class="big">PLAN</div><ul class="list"><li>Risk 1–2% maximum per trade</li><li>Wait for confirmation</li><li>No revenge trade</li></ul></div><div class="box"><div class="big">KILL RULE</div><ul class="list"><li>Close below invalidation = EXIT</li><li>Chase zone = NO TRADE</li><li>Missing data = WAIT</li></ul></div></div></div></section>
 <div class="footer">Smart Trading AI • Verified data first • No invented market calls</div>
 </main>
-<nav class="bottom"><button class="active" data-to="index"><b>⌂</b>Home</button><button data-to="index"><b>▥</b>Index</button><button data-to="scanner"><b>⌕</b>Scanner</button><button data-to="pcr"><b>◈</b>PCR</button><button data-to="flow"><b>◉</b>FII/DII</button></nav>
+<nav class="bottom" aria-label="App navigation"><button class="active" data-to="index"><b>⌂</b>Home</button><button data-to="index"><b>▥</b>Index</button><button data-to="scanner"><b>⌕</b>Scanner</button><button data-to="setup"><b>◈</b>Setup</button><button data-to="pcr"><b>▣</b>PCR</button><button data-to="flow"><b>◉</b>FII/DII</button><button data-to="shareTools"><b>↗</b>Share</button><button data-to="toolsRisk"><b>₹</b>Capital</button></nav>
 <script>
 const $=id=>document.getElementById(id);
 const fmt=v=>v==null?"WAIT":Number(v).toLocaleString("en-IN",{maximumFractionDigits:2});
@@ -190,7 +204,23 @@ async function decision(){const b=$("decisionBtn");b.textContent="ANALYSING…";
 $("searchBtn").onclick=()=>aiSearch($("search").value);$("search").addEventListener("keydown",e=>{if(e.key==="Enter")aiSearch($("search").value)});
 document.querySelectorAll(".suggest button").forEach(b=>b.onclick=()=>{$("search").value=b.textContent;aiSearch(b.textContent)});
 function aiSearch(q){q=q.toLowerCase().trim();if(!q)return;let a="AI SEARCH: ";if(q.includes("risk"))a+="Use capital × risk% ÷ SL points for maximum quantity. Never exceed planned risk.";else if(q.includes("vwap"))a+="VWAP + 5-min structure + volume must confirm before an entry.";else if(q.includes("breakout"))a+="Breakout requires structure + volume confirmation; avoid chasing.";else if(q.includes("swing"))a+="Run the Auto Scanner and select only high-score verified candidates.";else a+="Matched '"+q+"'. Live data is required before BUY/SELL.";$("searchResult").textContent=a;$("searchResult").style.display="block"}
-document.querySelectorAll(".bottom button").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();const target=document.getElementById(b.dataset.to);if(!target)return;document.querySelectorAll(".bottom button").forEach(x=>x.classList.remove("active"));b.classList.add("active");const y=target.getBoundingClientRect().top+window.pageYOffset-66;window.scrollTo({top:Math.max(0,y),behavior:"smooth"});}));
-checkConnection();loadQuotes();flows();setInterval(loadQuotes,15000);setInterval(checkConnection,30000);
+document.querySelectorAll(".bottom button").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const target=document.getElementById(b.dataset.to);if(!target)return;document.querySelectorAll(".bottom button").forEach(x=>x.classList.remove("active"));b.classList.add("active");const y=target.getBoundingClientRect().top+window.scrollY-72;window.scrollTo(0,Math.max(0,y));}));
+async function autoRefresh(){
+  await checkConnection();
+  const live=$("status").textContent.includes("LIVE");
+  if(!live)return;
+  await loadQuotes();
+  await Promise.allSettled([flows(),chain(),decision()]);
+}
+let autoBusy=false;
+async function autoCycle(){
+  if(autoBusy)return;
+  autoBusy=true;
+  try{await autoRefresh();}finally{autoBusy=false;}
+}
+autoCycle();
+setInterval(()=>{loadQuotes();checkConnection();},15000);
+setInterval(()=>{autoCycle();},60000);
+setInterval(()=>{if($("status").textContent.includes("LIVE")&&!autoBusy)scan();},300000);
 </script>
 </body></html>
