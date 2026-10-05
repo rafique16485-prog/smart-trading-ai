@@ -40,7 +40,8 @@ module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
-  const token = parseCookies(req).upstox_access_token;
+  const cookies = parseCookies(req);
+  const token = cookies.upstox_access_token || cookies.upstox_extended_token;
   if (!token) return res.status(401).json({ connected: false, error: "Upstox not connected" });
 
   const key = String(req.query?.underlying || "nifty").toLowerCase();
