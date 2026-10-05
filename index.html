@@ -76,8 +76,8 @@ button,input,select{font:inherit}button{cursor:pointer}
  .table{min-width:620px;font-size:9px}.table th,.table td{padding:5px}.notice,.calc{font-size:9px}.primary{font-size:10px}
  .regime{grid-template-columns:1fr}.pcrgrid{grid-template-columns:1fr 1fr}.pcrbig{font-size:25px}.actions{grid-template-columns:1fr}.action{padding:9px}
 }
-<style>
 /* Smart Trading AI mobile reliability + native-style shell */
+
 html{scroll-behavior:smooth;scroll-padding-top:76px}
 body{font-family:Inter,Roboto,Arial,Helvetica,sans-serif!important}
 .top{background:linear-gradient(135deg,#041b48,#075dcc)}
@@ -89,8 +89,8 @@ body{font-family:Inter,Roboto,Arial,Helvetica,sans-serif!important}
 .bottom .active{box-shadow:inset 0 -3px 0 #fff}
 @media(max-width:760px){.bottom{height:66px}.bottom button{font-size:8px;min-width:66px}.wrap{padding-bottom:82px}}
 @media(max-width:480px){.bottom{height:64px}.bottom button{min-width:64px}.bottom b{font-size:17px}.wrap{padding-bottom:80px}}
-<style>
 /* Android WebView safe-area fix: keep system status icons out of the app header */
+
 html,body{min-height:100%;overscroll-behavior-y:none}
 .android-webview .top{padding-top:env(safe-area-inset-top,0px)}
 .android-webview .topin{padding-top:4px}
@@ -98,7 +98,7 @@ html,body{min-height:100%;overscroll-behavior-y:none}
 .android-webview .bottom{padding-bottom:env(safe-area-inset-bottom,0px);height:calc(66px + env(safe-area-inset-bottom,0px))}
 .android-webview .bottom button{padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
 @media(max-width:480px){.android-webview .top{padding-top:28px}.android-webview .topin{padding-top:2px}.android-webview .bottom{height:72px}}
-</style></style></style>
+</style>
 </head>
 <body>
 <header class="top"><div class="topin"><div class="brand"><div class="brandleft"><img class="logo" src="/icon.svg"><div><div class="name">SMART TRADING AI</div><div class="sub">ONE-PAGE TRADING CONTROL CENTER</div></div></div><div style="display:flex;align-items:center;gap:6px"><button class="connect" id="connectBtn">CONNECT UPSTOX</button><div class="status" id="status">● WAIT</div></div></div></div></header>
@@ -163,7 +163,9 @@ const $=id=>document.getElementById(id);
 const fmt=v=>v==null?"WAIT":Number(v).toLocaleString("en-IN",{maximumFractionDigits:2});
 function setStatus(t,ok=false){$("status").textContent=(ok?"● ":"● ")+t;$("status").style.background=ok?"#083c24":"#4a3005";$("status").style.color=ok?"#8df0b9":"#ffd27a"}
 function pct(last,prev){return last!=null&&prev?((last-prev)/prev*100):null}
-function flatQuotes(d){return Array.isArray(d?.quotes)?d.quotes:[]}\nasync function checkConnection(){try{const r=await fetch("/api/upstox/status",{cache:"no-store"}),d=await r.json();if(d.connected){setStatus("LIVE",true);$("connectBtn").textContent="UPSTOX LIVE"}else{setStatus("WAIT");$("connectBtn").textContent="CONNECT UPSTOX";$("dataNote").textContent=d.reason==="token_expired"?"Upstox session expired • reconnect to refresh live data.":"Connect Upstox to receive verified live market data. No fake prices are shown."}}catch(e){setStatus("WAIT")}}\n$("connectBtn").onclick=()=>{window.location.href="/api/upstox/login"}
+function flatQuotes(d){return Array.isArray(d?.quotes)?d.quotes:[]}
+async function checkConnection(){try{const r=await fetch("/api/upstox/status",{cache:"no-store"}),d=await r.json();if(d.connected){setStatus("LIVE",true);$("connectBtn").textContent="UPSTOX LIVE"}else{setStatus("WAIT");$("connectBtn").textContent="CONNECT UPSTOX";$("dataNote").textContent=d.reason==="token_expired"?"Upstox session expired • reconnect to refresh live data.":"Connect Upstox to receive verified live market data. No fake prices are shown."}}catch(e){setStatus("WAIT")}}
+$("connectBtn").onclick=()=>{window.location.href="/api/upstox/login"}
 async function loadQuotes(){
  try{
   const r=await fetch("/api/upstox/quote",{cache:"no-store"}),d=await r.json();if(!r.ok)throw new Error(d.error||"Upstox not connected");
@@ -215,7 +217,8 @@ function share(t){window.open("https://wa.me/?text="+encodeURIComponent(t),"_bla
 $("shareTrade").onclick=()=>share("Smart Trading AI | Verdict: "+$("verdict").textContent+" | NIFTY: "+$("nifty").textContent+" | Risk protected");
 $("shareSummary").onclick=()=>share("Smart Trading AI | NIFTY "+$("nifty").textContent+" | BANK NIFTY "+$("bank").textContent+" | SENSEX "+$("sensex").textContent+" | Verdict "+$("verdict").textContent);
 $("shareScan").onclick=()=>share("Smart Trading AI | Swing Scanner | Verified data required before entry.");
-async function decision(){const b=$("decisionBtn");b.textContent="ANALYSING…";try{const r=await fetch("/api/ai/decision?underlying="+$("decisionUnderlying").value,{cache:"no-store"}),d=await r.json();if(!r.ok)throw new Error(d.error||"Decision engine unavailable");$("verdict").textContent=d.verdict||"WAIT";$("decisionReason").textContent=(d.confirmation_count??0)+"/"+(d.required_confirmations??4)+" confirmations • "+(d.reason||"Verified data only");const o=d.option_setup; $("decisionOut").textContent=o?("OPTION: "+o.strike+" "+o.option_type+" • EXP: "+(o.expiry||"WAIT")+" • PREMIUM: ₹"+fmt(o.premium)+" • SL: ₹"+fmt(o.stop_loss_premium)+" • TGT: ₹"+fmt(o.target_premium)+" • LOT: "+fmt(o.lot_size)+" • R:R 1:"+o.rr):("OPTION SETUP: WAIT • PCR: "+fmt(d.pcr)+" • VWAP: "+fmt(d.vwap)); if(o){const cap=Number($("capital").value)||0,rp=Number($("riskPct").value)||1,risk=cap*rp/100,lossPerUnit=Math.max(0,o.premium-o.stop_loss_premium),lot=Number(o.lot_size)||1,lotRisk=lossPerUnit*lot,lots=lotRisk>0?Math.floor(risk/lotRisk):0; $("positionOut").textContent=cap>0?("Capital: ₹"+fmt(cap)+" • Risk: "+rp+"% = ₹"+fmt(risk)+" • Lots: "+lots+" • Qty: "+(lots*lot)+" • Max Loss: ₹"+fmt(lots*lotRisk)):"Capital: Enter capital above • Risk: "+rp+"% • Lots: WAIT";} else $("positionOut").textContent="Capital: WAIT • Risk: WAIT • Qty/Lots: WAIT • Max Loss: WAIT";$("verdict").style.color=d.verdict==="CALL"?"var(--green)":d.verdict==="PUT"?"var(--red)":"var(--amber)"}catch(e){$("verdict").textContent="WAIT";$("decisionReason").textContent=e.message+" • No call invented."}finally{b.textContent="RUN DECISION AI"}}\n$("decisionBtn").onclick=decision;$("scanBtn").onclick=scan;$("top10Btn").onclick=renderTop10;$("gateFilter").onchange=scan;$("chainBtn").onclick=chain;
+async function decision(){const b=$("decisionBtn");b.textContent="ANALYSING…";try{const r=await fetch("/api/ai/decision?underlying="+$("decisionUnderlying").value,{cache:"no-store"}),d=await r.json();if(!r.ok)throw new Error(d.error||"Decision engine unavailable");$("verdict").textContent=d.verdict||"WAIT";$("decisionReason").textContent=(d.confirmation_count??0)+"/"+(d.required_confirmations??4)+" confirmations • "+(d.reason||"Verified data only");const o=d.option_setup; $("decisionOut").textContent=o?("OPTION: "+o.strike+" "+o.option_type+" • EXP: "+(o.expiry||"WAIT")+" • PREMIUM: ₹"+fmt(o.premium)+" • SL: ₹"+fmt(o.stop_loss_premium)+" • TGT: ₹"+fmt(o.target_premium)+" • LOT: "+fmt(o.lot_size)+" • R:R 1:"+o.rr):("OPTION SETUP: WAIT • PCR: "+fmt(d.pcr)+" • VWAP: "+fmt(d.vwap)); if(o){const cap=Number($("capital").value)||0,rp=Number($("riskPct").value)||1,risk=cap*rp/100,lossPerUnit=Math.max(0,o.premium-o.stop_loss_premium),lot=Number(o.lot_size)||1,lotRisk=lossPerUnit*lot,lots=lotRisk>0?Math.floor(risk/lotRisk):0; $("positionOut").textContent=cap>0?("Capital: ₹"+fmt(cap)+" • Risk: "+rp+"% = ₹"+fmt(risk)+" • Lots: "+lots+" • Qty: "+(lots*lot)+" • Max Loss: ₹"+fmt(lots*lotRisk)):"Capital: Enter capital above • Risk: "+rp+"% • Lots: WAIT";} else $("positionOut").textContent="Capital: WAIT • Risk: WAIT • Qty/Lots: WAIT • Max Loss: WAIT";$("verdict").style.color=d.verdict==="CALL"?"var(--green)":d.verdict==="PUT"?"var(--red)":"var(--amber)"}catch(e){$("verdict").textContent="WAIT";$("decisionReason").textContent=e.message+" • No call invented."}finally{b.textContent="RUN DECISION AI"}}
+$("decisionBtn").onclick=decision;$("scanBtn").onclick=scan;$("top10Btn").onclick=renderTop10;$("gateFilter").onchange=scan;$("chainBtn").onclick=chain;
 $("searchBtn").onclick=()=>aiSearch($("search").value);$("search").addEventListener("keydown",e=>{if(e.key==="Enter")aiSearch($("search").value)});
 document.querySelectorAll(".suggest button").forEach(b=>b.onclick=()=>{$("search").value=b.textContent;aiSearch(b.textContent)});
 function aiSearch(q){q=q.toLowerCase().trim();if(!q)return;let a="AI SEARCH: ";if(q.includes("risk"))a+="Use capital × risk% ÷ SL points for maximum quantity. Never exceed planned risk.";else if(q.includes("vwap"))a+="VWAP + 5-min structure + volume must confirm before an entry.";else if(q.includes("breakout"))a+="Breakout requires structure + volume confirmation; avoid chasing.";else if(q.includes("swing"))a+="Run the Auto Scanner and select only high-score verified candidates.";else a+="Matched '"+q+"'. Live data is required before BUY/SELL.";$("searchResult").textContent=a;$("searchResult").style.display="block"}
