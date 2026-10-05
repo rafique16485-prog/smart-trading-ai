@@ -7,8 +7,8 @@ android {
         applicationId "com.smarttradingai.app"
         minSdk 23
         targetSdk 34
-        versionCode 90
-        versionName "9.0"
+        versionCode 91
+        versionName "9.1"
     }
     buildTypes {
         release {
