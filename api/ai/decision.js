@@ -42,15 +42,26 @@ try{
  }
  optionQuality=Math.max(0,Math.min(100,Math.round(optionQuality)));
  const optionGrade=optionQuality>=85?"A+":optionQuality>=75?"A":optionQuality>=65?"B":optionQuality>=55?"C":"D";
+ const selectedMd=option?.instrument_key?((option.option_type==="CE"?atmCE:atmPE)||{}):{};
+ const bid=Number(selectedMd.bid_price??selectedMd.bid??NaN), ask=Number(selectedMd.ask_price??selectedMd.ask??NaN);
+ const spreadPct=Number.isFinite(bid)&&Number.isFinite(ask)&&bid>0&&ask>=bid?((ask-bid)/((ask+bid)/2))*100:null;
+ const expiryMs=option?.expiry?Date.parse(option.expiry+"T15:30:00+05:30"):NaN;
+ const daysToExpiry=Number.isFinite(expiryMs)?(expiryMs-Date.now())/86400000:null;
+ const liquidityGate=!!option&&Number(option.liquidity_volume)>0&&Number(option.oi)>0&&Number(option.lot_size)>0;
+ const spreadGate=spreadPct==null||spreadPct<=5;
+ const expiryGate=daysToExpiry!=null&&daysToExpiry>=0;
+ const contractGate=liquidityGate&&spreadGate&&expiryGate;
+ const contractGateReasons=[]; if(!liquidityGate)contractGateReasons.push("liquidity/OI insufficient"); if(!spreadGate)contractGateReasons.push("bid-ask spread >5%"); if(!expiryGate)contractGateReasons.push("expiry invalid/expired");
  const entryReady=verdict!=="WAIT"&&Number.isFinite(spot)&&Number.isFinite(vwap)&&Number.isFinite(vr)&&vr>0&&Number.isFinite(pcr)&&dataFresh;
  const riskReady=option&&Number.isFinite(option.premium)&&option.premium>0&&Number.isFinite(option.stop_loss_premium)&&Number.isFinite(option.target_premium)&&option.rr>=2&&Number(option.lot_size)>0;
  const confirmationReady=max>=4&&!same&&!regimeBlocks&&!directionMismatch&&Number.isFinite(pcr);
- const finalGate=entryReady&&riskReady&&confirmationReady?"OPEN":"WAIT";
+ const finalGate=entryReady&&riskReady&&confirmationReady&&contractGate?"OPEN":"WAIT";
  const finalVerdict=finalGate==="OPEN"?verdict:"WAIT";
  const gateReasons=[];
  if(!confirmationReady)gateReasons.push("confirmation gate failed");
  if(!entryReady)gateReasons.push(dataFresh?"entry/data gate failed":"market data stale");
  if(!riskReady)gateReasons.push("risk/R:R gate failed");
+ if(!contractGate)gateReasons.push(...contractGateReasons);
  const reason=finalGate==="WAIT"?(gateReasons.length?gateReasons.join(" • "):"Final trade gate is WAIT"):"All gates passed: regime + confirmation + entry + risk/R:R";
- return res.status(200).json({connected:true,underlying:key,verdict:finalVerdict,confidence:max,confidence_pct:confidencePct,confidence_label:confidencePct>=80?"HIGH":confidencePct>=60?"MEDIUM":"LOW",confirmation_count:max,required_confirmations:4,reason,market_regime:marketRegime,allowed_setup:allowedSetup,regime_trade_gate:regimeBlocks?"WAIT":"OPEN",data_quality:{fresh:dataFresh,age_minutes:Number.isFinite(ageMin)?Number(Math.max(0,ageMin).toFixed(1)):null,market_session:marketSession},trade_gate:{regime:regimeBlocks?"WAIT":"OPEN",direction:directionMismatch?"WAIT":"PASS",confirmations:confirmationReady?"PASS":"WAIT",entry:entryReady?"PASS":"WAIT",risk_rr:riskReady?"PASS":"WAIT",final:finalGate,reasons:gateReasons},factors:s.factors,pcr:Number.isFinite(pcr)?Number(pcr.toFixed(3)):null,vwap:vwap?Number(vwap.toFixed(2)):null,structure,volume_ratio:vr?Number(vr.toFixed(2)):null,option_quality:option?{score:optionQuality,grade:optionGrade,reasons:optionQualityReasons,atm_oi:{ce:atmOiCE,pe:atmOiPE,ce_change:atmOiChangeCE,pe_change:atmOiChangePE},atm_volume:{ce:atmVolCE,pe:atmVolPE}}:null,option_setup:finalGate==="OPEN"?option:null,expiry:expiry||option?.expiry||null,chain_note:chainNote});
+ return res.status(200).json({connected:true,underlying:key,verdict:finalVerdict,confidence:max,confidence_pct:confidencePct,confidence_label:confidencePct>=80?"HIGH":confidencePct>=60?"MEDIUM":"LOW",confirmation_count:max,required_confirmations:4,reason,market_regime:marketRegime,allowed_setup:allowedSetup,regime_trade_gate:regimeBlocks?"WAIT":"OPEN",data_quality:{fresh:dataFresh,age_minutes:Number.isFinite(ageMin)?Number(Math.max(0,ageMin).toFixed(1)):null,market_session:marketSession},trade_gate:{regime:regimeBlocks?"WAIT":"OPEN",direction:directionMismatch?"WAIT":"PASS",confirmations:confirmationReady?"PASS":"WAIT",entry:entryReady?"PASS":"WAIT",risk_rr:riskReady?"PASS":"WAIT",contract:contractGate?"PASS":"WAIT",final:finalGate,reasons:gateReasons},factors:s.factors,pcr:Number.isFinite(pcr)?Number(pcr.toFixed(3)):null,vwap:vwap?Number(vwap.toFixed(2)):null,structure,volume_ratio:vr?Number(vr.toFixed(2)):null,option_quality:option?{score:optionQuality,grade:optionGrade,reasons:optionQualityReasons,atm_oi:{ce:atmOiCE,pe:atmOiPE,ce_change:atmOiChangeCE,pe_change:atmOiChangePE},atm_volume:{ce:atmVolCE,pe:atmVolPE}}:null,contract_quality:option?{gate:contractGate?"PASS":"WAIT",bid:Number.isFinite(bid)?bid:null,ask:Number.isFinite(ask)?ask:null,spread_pct:spreadPct!=null?Number(spreadPct.toFixed(2)):null,days_to_expiry:daysToExpiry!=null?Number(daysToExpiry.toFixed(2)):null,reasons:contractGateReasons}:null,option_setup:finalGate==="OPEN"?option:null,expiry:expiry||option?.expiry||null,chain_note:chainNote});
 }catch(e){return res.status(502).json({connected:true,verdict:"WAIT",error:"Decision engine unavailable",message:e.message})}}
