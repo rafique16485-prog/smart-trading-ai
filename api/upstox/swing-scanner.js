@@ -282,7 +282,7 @@ module.exports=async(req,res)=>{
           (entryDistance==null?4:(entryDistance<=0.25?6:entryDistance<=0.75?4:0)) +
           (rr>=2?6:0) + (!x.chase?3:0),
         news: ni.impact==="POSITIVE"?10:ni.impact==="NEUTRAL"||ni.impact==="NONE"?6:ni.impact==="MIXED"?3:0,
-        institutional: !fiiDii.available?0:6
+        institutional: !fiiDii.available?0:5
       };
       const qualityRaw=Object.values(qualityParts).reduce((a,b)=>a+b,0);
       const setupQualityScore=Math.max(0,Math.min(100,qualityRaw));
