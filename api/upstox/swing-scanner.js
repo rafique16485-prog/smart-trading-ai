@@ -270,16 +270,38 @@ module.exports=async(req,res)=>{
       const setupGate=x.trigger&&!x.chase&&rr>=2&&(entryDistance==null||entryDistance<=0.75);
       const gateReason=setupGate?"ENTRY + VOLUME + RSI + R:R PASS":x.chase?"CHASE FILTER":!x.trigger?"BREAKOUT/VOLUME/RSI INCOMPLETE":rr<2?"R:R < 1:2":"ENTRY TOO EXTENDED";
       const decisionGate=setupGate&&composite>=9?"READY":composite>=6?"WATCH":composite<=2?"AVOID":"WAIT";
-      return {...x,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading),fundamentals:fund,compositeScore:composite,riskReward:rr,entryDistancePct:entryDistance,setupGate,gateReason,decisionGate};
+
+      // Setup Quality Score /100: descriptive ranking only, never overrides hard trade gates.
+      const qualityParts={
+        technical: Math.round((Number(x.breakout)*8)+(Number(x.trend)*5)+(Number(x.rsiOK)*4)+(Number(x.volumeUp)*5)+(Number(x.consolidation)*3)),
+        marketAlignment: (relativeStrength==null?0:(relativeStrength>1?10:relativeStrength>0?6:0)) + (sector.avgReturn>1?10:sector.avgReturn>0?6:0),
+        fundamentals: (fund.quality?.revenueGrowth!=null && Number(fund.quality.revenueGrowth)>0?5:0) +
+          (fund.quality?.netProfitGrowth!=null && Number(fund.quality.netProfitGrowth)>0?5:0) +
+          ((fund.ratios?.ROE?.company_value||fund.ratios?.ROCE?.company_value)?5:0),
+        tradeability: (x.trigger?10:0) +
+          (entryDistance==null?4:(entryDistance<=0.25?6:entryDistance<=0.75?4:0)) +
+          (rr>=2?6:0) + (!x.chase?3:0),
+        news: ni.impact==="POSITIVE"?10:ni.impact==="NEUTRAL"||ni.impact==="NONE"?6:ni.impact==="MIXED"?3:0,
+        institutional: !fiiDii.available?0:6
+      };
+      const qualityRaw=Object.values(qualityParts).reduce((a,b)=>a+b,0);
+      const setupQualityScore=Math.max(0,Math.min(100,qualityRaw));
+      const setupQualityGrade=setupQualityScore>=90?"A+":setupQualityScore>=80?"A":setupQualityScore>=70?"B":setupQualityScore>=60?"C":"D";
+      const marketAlignment=relativeStrength!=null && sector.avgReturn!=null
+        ? (relativeStrength>0 && sector.avgReturn>0 ? "ALIGNED" : relativeStrength<0 && sector.avgReturn<0 ? "WEAK" : "MIXED")
+        : "UNKNOWN";
+      return {...x,sectorAvgReturn:sector.avgReturn,sectorCount:sector.count,sectorBreakouts:sector.breakouts,relativeStrength,news:ni.flag,newsImpact:ni.impact,governmentLinked:ni.gov,newsHeadlines:(newsMap[x.key]||[]).slice(0,2).map(n=>n.heading),fundamentals:fund,compositeScore:composite,riskReward:rr,entryDistancePct:entryDistance,setupGate,gateReason,decisionGate,setupQualityScore,setupQualityGrade,qualityBreakdown:qualityParts,marketAlignment};
     });
-    return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,benchmark:{name:"NIFTY 50",returnPct:benchmarkReturn},institutional:fiiDii,sectorStats,results,tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
+    results.sort((a,b)=>b.setupQualityScore-a.setupQualityScore||b.compositeScore-a.compositeScore);
+    return res.status(200).json({connected:true,source:"Upstox + NSE/Nifty Indices",universe:urls.map(x=>x[0]),scanned:universeRows.length,technicalShortlist:candidates.length,benchmark:{name:"NIFTY 50",returnPct:benchmarkReturn},institutional:fiiDii,sectorStats,results,qualityModel:{maxScore:100,grades:"A+ >=90, A >=80, B >=70, C >=60, D <60",hardGateIndependent:true},tradePlan:{entry:"Prior 20-day high to +0.25 ATR breakout zone; chase filter at +1 ATR",stop:"Breakout level minus 0.75 ATR (or recent structure fallback)",targets:"T1=1.5R, T2=2R",quantity:"Calculated client-side from capital and risk %",holding:"Estimated 3–15 trading days from ATR; not a guarantee"},notes:{
       volume:"Today volume / prior 20 completed daily bars",
       breakout:"LTP above prior 20-day high",
       consolidation:"Prior 20-day range <= 12%",
       rsi:"14-period daily RSI, preferred 60–80",
       news:"Upstox news from past 7 days; keyword tags are heuristic",
       fii_dii:"Market-wide institutional flow is not treated as stock-specific interest in this scanner.",
-      finalGate:"READY requires composite >=9 plus breakout+volume+RSI, no chase, entry not >0.75% above zone, and minimum 1:2 R:R."
+      finalGate:"READY requires composite >=9 plus breakout+volume+RSI, no chase, entry not >0.75% above zone, and minimum 1:2 R:R.",
+      qualityScore:"/100 ranking combines technical structure, market/sector alignment, fundamentals, tradeability, news and institutional context. It is descriptive, not predictive, and cannot override the hard gate.",
       fundamentals:"Shareholding is quarterly; corporate actions are event-based; key ratios are descriptive context, not a trade trigger."
     }});
   }catch(e){return res.status(502).json({connected:true,error:e.message||"Swing scanner failed"})}
