@@ -8,8 +8,9 @@ const INSTRUMENTS = {
 };
 
 function getJson(url, token) {
+  const tokens=Array.isArray(token)?token.filter(Boolean):[token];
   return new Promise((resolve, reject) => {
-    const req = https.get(url, {
+    const attempt=(idx)=>new Promise((resolve,reject)=>{const req = https.get(url, {
       headers: { Accept: "application/json", Authorization: "Bearer " + token }
     }, res => {
       let body = "";
@@ -18,13 +19,13 @@ function getJson(url, token) {
         let parsed = null;
         try { parsed = JSON.parse(body); } catch (e) {}
         if (res.statusCode < 200 || res.statusCode >= 300) {
-          return reject(new Error(parsed?.errors?.[0]?.message || parsed?.message || "Upstox candle request failed (" + res.statusCode + ")"));
+          if((res.statusCode===401||res.statusCode===403)&&idx+1<tokens.length)return attempt(idx+1).then(resolve).catch(reject); return reject(new Error(parsed?.errors?.[0]?.message || parsed?.message || "Upstox candle request failed (" + res.statusCode + ")"));
         }
         resolve(parsed || {});
       });
     });
-    req.on("error", reject);
-  });
+    req.on("error", reject);});
+  return attempt(0);
 }
 
 function parseCookies(req) {
@@ -41,8 +42,8 @@ module.exports = async (req, res) => {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
   const cookies = parseCookies(req);
-  const token = cookies.upstox_access_token || cookies.upstox_extended_token;
-  if (!token) return res.status(401).json({ connected: false, error: "Upstox not connected" });
+  const token = [cookies.upstox_access_token,cookies.upstox_extended_token].filter(Boolean);
+  if (!token.length) return res.status(401).json({ connected: false, error: "Upstox not connected" });
 
   const key = String(req.query?.underlying || "nifty").toLowerCase();
   const instrumentKey = INSTRUMENTS[key] || INSTRUMENTS.nifty;
