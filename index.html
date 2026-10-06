@@ -286,4 +286,60 @@ setInterval(()=>{loadQuotes();checkConnection();},15000);
 setInterval(()=>{autoCycle();},60000);
 setInterval(()=>{if($("status").textContent.includes("LIVE")&&!autoBusy)scan();},300000);
 </script>
+
+<!-- Smart Trading AI 100X SAFETY UPGRADE -->
+<style>
+#sta100xGuard{margin:12px 0;padding:12px;border:1px solid #cfe2ff;border-radius:16px;background:linear-gradient(135deg,#f7fbff,#fff);box-shadow:0 5px 18px rgba(20,55,100,.07)}
+#sta100xGuard .ghead{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+#sta100xGuard .gtitle{font-weight:900;color:#123b68;font-size:15px}
+#sta100xGuard .gx{font-size:11px;font-weight:900;padding:5px 9px;border-radius:999px;background:#eaf3ff;color:#145aa0}
+#sta100xGuard .checks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:9px}
+#sta100xGuard .check{padding:8px;border-radius:10px;background:#f4f7fb;font-size:11px;font-weight:800;text-align:center}
+#sta100xGuard .ok{background:#eafff2;color:#087a45}.wait{background:#fff7e7;color:#855300}.bad{background:#fff0f0;color:#b42318}
+#sta100xGuard .note{margin-top:8px;font-size:11px;color:#52657a}
+@media(max-width:700px){#sta100xGuard .checks{grid-template-columns:repeat(2,1fr)}}
+</style>
+<div id="sta100xGuard">
+  <div class="ghead"><div class="gtitle">🛡️ 100X SAFETY GUARD</div><div id="sta100xState" class="gx">CHECKING…</div></div>
+  <div class="checks">
+    <div id="gMarket" class="check">MARKET: CHECK</div>
+    <div id="gData" class="check">DATA: CHECK</div>
+    <div id="gConfirm" class="check">CONFIRM: CHECK</div>
+    <div id="gRR" class="check">R:R: CHECK</div>
+    <div id="gRisk" class="check">RISK: CHECK</div>
+  </div>
+  <div id="gNote" class="note">No trade is approved by this guard. It only blocks weak/unsafe conditions.</div>
+</div>
+<script>
+(function(){
+ const q=id=>document.getElementById(id);
+ function mark(id,text,state){const e=q(id);if(!e)return;e.textContent=text;e.className="check "+(state==="ok"?"ok":state==="bad"?"bad":"wait")}
+ function marketOpen(){const n=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Kolkata"}));const d=n.getDay(),m=n.getHours()*60+n.getMinutes();return d>=1&&d<=5&&m>=555&&m<=930}
+ function guard(){
+   const verdict=(q("verdict")?.textContent||"WAIT").toUpperCase();
+   const reason=(q("decisionReason")?.textContent||"");
+   const gate=(q("tradeGateOut")?.textContent||"").toUpperCase();
+   const score=(q("systemScoreOut")?.textContent||"").match(/(\d+(?:\.\d+)?)\/100/);
+   const conf=(reason.match(/(\d+)\/(\d+) confirmations/i)||[]);
+   const rr=(q("decisionOut")?.textContent||"").match(/R:R\s*1:([0-9.]+)/i);
+   const connected=(q("status")?.textContent||"").toUpperCase().includes("LIVE");
+   const mo=marketOpen();
+   const cOk=!!conf[1]&&!!conf[2]&&Number(conf[1])>=Number(conf[2]);
+   const rrOk=!rr||Number(rr[1])>=2;
+   const gateOk=gate.includes("FINAL TRADE GATE: OPEN");
+   mark("gMarket","MARKET: "+(mo?"OPEN":"CLOSED"),mo?"ok":"wait");
+   mark("gData","DATA: "+(connected?"LIVE":"WAIT"),connected?"ok":"wait");
+   mark("gConfirm","CONFIRM: "+(cOk?conf[1]+"/"+conf[2]:"WAIT"),cOk?"ok":"wait");
+   mark("gRR","R:R: "+(rr?("1:"+rr[1]):"WAIT"),rrOk?"ok":"wait");
+   mark("gRisk","RISK: "+(gateOk?"GATE OPEN":"BLOCK"),gateOk?"ok":"wait");
+   const safe=verdict!=="WAIT"&&mo&&connected&&cOk&&rrOk&&gateOk;
+   q("sta100xState").textContent=safe?"100X GATE OPEN":"100X GATE — WAIT";
+   q("sta100xState").style.background=safe?"#eafff2":"#fff7e7";
+   q("sta100xState").style.color=safe?"#087a45":"#855300";
+   q("gNote").textContent=safe?"All visible safety checks passed. Still verify the broker order screen before execution.":"At least one safety check is incomplete. Smart Trading AI will not treat this as an approved trade.";
+ }
+ window.sta100xGuard=guard;
+ setInterval(guard,2000);setTimeout(guard,500);
+})();
+</script>
 </body></html>
