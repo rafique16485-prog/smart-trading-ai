@@ -15,13 +15,18 @@ module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
   res.setHeader("Cache-Control","no-store");
   const c=getCookies(req);
-  if(!c.upstox_access_token && !c.upstox_extended_token) return res.status(200).json({connected:false,reason:"not_logged_in"});
+  // Prefer the user's OAuth session, but allow a securely configured server-side
+  // token so the Android APK can receive live quotes without depending on a
+  // WebView cookie surviving the OAuth redirect.
+  const accessToken=c.upstox_access_token || process.env.UPSTOX_ACCESS_TOKEN || null;
+  const extendedToken=c.upstox_extended_token || process.env.UPSTOX_EXTENDED_TOKEN || null;
+  if(!accessToken && !extendedToken) return res.status(200).json({connected:false,reason:"not_logged_in"});
   try{
     let used="access";
-    let r=c.upstox_access_token?await check(c.upstox_access_token):{ok:false,status:401};
-    if(!r.ok && c.upstox_extended_token){
+    let r=accessToken?await check(accessToken):{ok:false,status:401};
+    if(!r.ok && extendedToken){
       used="extended";
-      r=await check(c.upstox_extended_token);
+      r=await check(extendedToken);
     }
     if(!r.ok){
       const expired=r.status===401||r.status===403;
@@ -35,6 +40,6 @@ module.exports = async function handler(req, res) {
     if(used==="extended" && c.upstox_access_token){
       res.setHeader("Set-Cookie","upstox_access_token=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0");
     }
-    return res.status(200).json({connected:true,source:"Upstox V3",token_type:used});
+    return res.status(200).json({connected:true,source:"Upstox V3",token_type:used,server_token:!c.upstox_access_token&&!!process.env.UPSTOX_ACCESS_TOKEN});
   }catch(e){return res.status(200).json({connected:false,reason:"upstox_unreachable"});}
 };
