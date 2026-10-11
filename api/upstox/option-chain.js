@@ -117,18 +117,21 @@ export default async function handler(req, res) {
     const chainUrl = "https://api.upstox.com/v2/option/chain?instrument_key=" +
       encodeURIComponent(instrumentKey) + "&expiry_date=" + encodeURIComponent(expiry);
     const chainResult = await upstoxGet(chainUrl, tokens);
-    const rows = Array.isArray(chainResult.body?.data) ? chainResult.body.data : [];
+    const rawRows = Array.isArray(chainResult.body?.data) ? chainResult.body.data : [];
+    const rows = rawRows.filter(r => num(r?.strike_price) > 0);
     if (!rows.length) {
       return res.status(200).json({
         connected: true, source: "Upstox Option Chain", instrument_key: instrumentKey,
         expiry, count: 0, chain: [], full_chain: { pcr: null },
-        message: "No option-chain rows returned for the selected expiry. WAIT — NO TRADE."
+        data_quality: "missing_or_invalid_strikes",
+        verdict: "WAIT — NO TRADE",
+        message: "No valid option-chain strikes returned for the selected expiry. WAIT — NO TRADE."
       });
     }
 
-    const spot = num(rows[0]?.underlying_spot_price);
+    const spot = num(rows.find(r => num(r?.underlying_spot_price) > 0)?.underlying_spot_price);
     if (!(spot > 0)) {
-      return res.status(502).json({ connected: true, error: "Invalid underlying spot price from Upstox. WAIT — NO TRADE." });
+      return res.status(502).json({ connected: true, data_quality: "invalid_spot", error: "Invalid underlying spot price from Upstox. WAIT — NO TRADE.", verdict: "WAIT — NO TRADE" });
     }
     const strikes = rows.map(r => num(r.strike_price)).filter(x => x > 0).sort((a, b) => a - b);
     const atm = strikes.length ? strikes.reduce((best, strike) =>
@@ -154,14 +157,19 @@ export default async function handler(req, res) {
       };
     };
 
+    const hasCallOI = rows.some(r => num(optionSide(r.call_options).oi) > 0);
+    const hasPutOI = rows.some(r => num(optionSide(r.put_options).oi) > 0);
+    const oiComplete = hasCallOI && hasPutOI;
     return res.status(200).json({
       connected: true, source: "Upstox Option Chain", token_type: "verified",
       server_token: !cookies.upstox_access_token && !!(process.env.UPSTOX_ACCESS_TOKEN || process.env.UPSTOX_EXTENDED_TOKEN),
       instrument_key: instrumentKey, expiry, spot, atm_strike: atm,
+      data_quality: oiComplete ? "strike_and_oi_present" : "oi_missing_or_zero",
+      verdict: oiComplete ? "DATA CHECK PASSED — CONFIRM PRICE ACTION" : "WAIT — NO TRADE",
       full_chain: {
         strikes: rows.length, call_oi: fullCallOI, put_oi: fullPutOI,
         call_oi_change: fullCallOI - fullCallPrevOI, put_oi_change: fullPutOI - fullPutPrevOI,
-        pcr: fullCallOI > 0 ? Number((fullPutOI / fullCallOI).toFixed(3)) : null
+        pcr: oiComplete && fullCallOI > 0 ? Number((fullPutOI / fullCallOI).toFixed(3)) : null
       },
       atm_window: {
         strikes: selected.length, call_oi: callOI, put_oi: putOI,
