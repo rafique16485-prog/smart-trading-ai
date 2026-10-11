@@ -34,12 +34,28 @@ function istToday() {
 async function upstoxGet(url, tokens) {
   let last = null;
   for (const token of tokens.filter(Boolean)) {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: { Accept: "application/json", Authorization: "Bearer " + token },
-      cache: "no-store"
-    });
-    const body = await response.json().catch(() => ({}));
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 7000);
+    let response;
+    let body;
+    try {
+      response = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json", Authorization: "Bearer " + token },
+        cache: "no-store",
+        signal: controller.signal
+      });
+      body = await response.json().catch(() => ({}));
+    } catch (cause) {
+      if (cause?.name === "AbortError") {
+        const timeout = new Error("Upstox request timed out after 7 seconds");
+        timeout.status = 504;
+        throw timeout;
+      }
+      throw cause;
+    } finally {
+      clearTimeout(timer);
+    }
     if (response.ok) return { body, token };
     last = { status: response.status, message: body?.errors?.[0]?.message || body?.message || "Upstox request failed" };
     if (response.status !== 401 && response.status !== 403) break;
@@ -151,7 +167,9 @@ export default async function handler(req, res) {
       connected: status !== 401 && status !== 403,
       error: status === 401 || status === 403
         ? "Upstox session expired or authorization failed. Reconnect Upstox."
-        : "Upstox option-chain request failed. " + (error.message || "Try again later."),
+        : status === 504
+          ? "Upstox option-chain request timed out after 7 seconds. Retry; WAIT — NO TRADE."
+          : "Upstox option-chain request failed. Check connection and retry.",
       verdict: "WAIT — NO TRADE"
     });
   }
