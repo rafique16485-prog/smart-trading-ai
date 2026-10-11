@@ -167,6 +167,9 @@ function setStatus(t,ok=false){$("status").textContent=(ok?"● ":"● ")+t;$("s
 function pct(last,prev){return last!=null&&prev?((last-prev)/prev*100):null}
 function flatQuotes(d){return Array.isArray(d?.quotes)?d.quotes:[]}
 function formatQuoteTime(value){if(value==null||value==="")return "time unavailable";let n=typeof value==="number"?value:Number(value);let d=Number.isFinite(n)&&n>100000000000?new Date(n):new Date(value);if(!Number.isFinite(d.getTime()))return "time unavailable";return d.toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:true})+" IST"}
+function quoteTimeMs(value){if(value==null||value==="")return null;const n=typeof value==="number"?value:Number(value);const d=Number.isFinite(n)?new Date(n>100000000000?n:n>1000000000?n*1000:NaN):new Date(value);return Number.isFinite(d.getTime())?d.getTime():null}
+function marketClockIST(){const p=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Kolkata",weekday:"short",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date());const g=t=>p.find(x=>x.type===t)?.value;return {weekday:["Mon","Tue","Wed","Thu","Fri"].includes(g("weekday")),minutes:Number(g("hour"))*60+Number(g("minute"))}}
+function quoteFreshness(value){const t=quoteTimeMs(value),k=marketClockIST(),open=k.weekday&&k.minutes>=555&&k.minutes<=930;if(!open)return {state:"CLOSED",age:t==null?null:Math.max(0,(Date.now()-t)/60000)};if(t==null)return {state:"UNKNOWN",age:null};const age=(Date.now()-t)/60000;return {state:age>=0&&age<=15?"FRESH":"STALE",age}}
 async function checkConnection(){try{const r=await fetch("/api/upstox/status",{cache:"no-store"}),d=await r.json();if(d.connected){setStatus("LIVE",true);$("connectBtn").textContent="UPSTOX LIVE"}else{setStatus("WAIT");$("connectBtn").textContent="CONNECT UPSTOX";$("dataNote").textContent=d.reason==="token_expired"?"Upstox session expired • reconnect to refresh live data.":"Connect Upstox to receive verified live market data. No fake prices are shown."}}catch(e){setStatus("WAIT")}}
 $("connectBtn").onclick=()=>{window.location.href="/api/upstox/login"}
 async function loadQuotes(){
@@ -176,8 +179,12 @@ async function loadQuotes(){
   const n=find("nifty 50"),b=find("nifty bank"),s=find("sensex"),v=find("india vix");
   if(!n||!b||!Number.isFinite(Number(n.last_price))||Number(n.last_price)<=0||!Number.isFinite(Number(b.last_price))||Number(b.last_price)<=0)throw new Error("NIFTY/BANK NIFTY quote missing or invalid — WAIT, no trade.");
   [["nifty",n],["bank",b],["sensex",s],["vix",v]].forEach(([id,q])=>{if(q&&Number.isFinite(Number(q.last_price))&&Number(q.last_price)>0){$(id).textContent=fmt(q.last_price);const p=pct(q.last_price,q.prev_close_price);$(id+"Ch").textContent=p==null?"—":(p>=0?"+":"")+p.toFixed(2)+"%";$(id+"Ch").className="change "+(p>=0?"green":"red")}else if(id==="sensex"||id==="vix"){$(id).textContent="WAIT";$(id+"Ch").textContent="—"}});
-  setStatus("LIVE",true);$("dataNote").textContent="Upstox V3 verified index quotes. Quote time: "+formatQuoteTime(n.timestamp||b.timestamp)+". Confirm market session before trading.";$("dataNote").className="calc";
-  const delta=pct(n.last_price,n.prev_close_price);const label=delta==null?"WAIT":delta>0.35?"BULLISH":delta<-0.35?"BEARISH":"RANGE";$("dataNote").textContent+=" Day bias: "+label+" • "+(delta==null?"WAIT":(delta>=0?"+":"")+delta.toFixed(2)+"%");
+  const quoteTime=n.timestamp||b.timestamp;const freshness=quoteFreshness(quoteTime);
+  if(freshness.state==="FRESH")setStatus("LIVE",true);else if(freshness.state==="CLOSED")setStatus("MARKET CLOSED");else setStatus(freshness.state==="STALE"?"STALE DATA":"WAIT");
+  $("dataNote").textContent="Upstox quote time: "+formatQuoteTime(quoteTime)+". ";
+  if(freshness.state==="FRESH")$("dataNote").textContent+="Quote freshness verified ("+Math.round(freshness.age)+" min).";else if(freshness.state==="CLOSED")$("dataNote").textContent+="Market is outside regular NSE hours. These are last available quotes, not live trading prices.";else if(freshness.state==="STALE")$("dataNote").textContent+="Quote is "+Math.round(freshness.age)+" minutes old during market hours. Refresh/reconnect; WAIT — NO TRADE.";else $("dataNote").textContent+="Timestamp missing/invalid during market hours. WAIT — NO TRADE.";
+  $("dataNote").className="calc";
+  const delta=pct(n.last_price,n.prev_close_price);const label=freshness.state==="FRESH"?(delta==null?"WAIT":delta>0.35?"BULLISH":delta<-0.35?"BEARISH":"RANGE"):"WAIT";$("dataNote").textContent+=" Day bias: "+label+" • "+(delta==null?"WAIT":(delta>=0?"+":"")+delta.toFixed(2)+"%");
  }catch(e){setStatus("WAIT");["nifty","bank","sensex","vix"].forEach(id=>{if($(id))$(id).textContent="WAIT";if($(id+"Ch"))$(id+"Ch").textContent="—"});$("dataNote").textContent=(e.message||"Live data unavailable")+" • No signal until valid quotes are available. Reconnect Upstox if needed."}
 }
 function renderTop10(){
