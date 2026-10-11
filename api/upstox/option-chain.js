@@ -97,21 +97,30 @@ export default async function handler(req, res) {
   }
 
   try {
+    const contractsUrl = "https://api.upstox.com/v2/option/contract?instrument_key=" + encodeURIComponent(instrumentKey);
+    const contractsResult = await upstoxGet(contractsUrl, tokens);
+    const contracts = Array.isArray(contractsResult.body?.data) ? contractsResult.body.data : [];
+    const expiries = [...new Set(contracts.map(x => String(x?.expiry || x?.expiry_date || "").slice(0, 10))
+      .filter(x => isRealDate(x) && x >= today))].sort();
+    if (!expiries.length) {
+      return res.status(200).json({
+        connected: true, source: "Upstox Option Chain", instrument_key: instrumentKey,
+        expiry: null, count: 0, chain: [], full_chain: { pcr: null },
+        verdict: "WAIT — NO TRADE",
+        message: "No future option expiry returned by Upstox. WAIT — NO TRADE."
+      });
+    }
+
     let expiry = requestedExpiry;
     if (requestedExpiry === "current_week") {
-      const contractsUrl = "https://api.upstox.com/v2/option/contract?instrument_key=" + encodeURIComponent(instrumentKey);
-      const contractsResult = await upstoxGet(contractsUrl, tokens);
-      const contracts = Array.isArray(contractsResult.body?.data) ? contractsResult.body.data : [];
-      const expiries = [...new Set(contracts.map(x => String(x?.expiry || x?.expiry_date || "").slice(0, 10))
-        .filter(x => isRealDate(x) && x >= today))].sort();
-      if (!expiries.length) {
-        return res.status(200).json({
-          connected: true, source: "Upstox Option Chain", instrument_key: instrumentKey,
-          expiry: null, count: 0, chain: [], full_chain: { pcr: null },
-          message: "No future option expiry returned by Upstox. WAIT — NO TRADE."
-        });
-      }
       expiry = expiries[0];
+    } else if (!expiries.includes(requestedExpiry)) {
+      return res.status(400).json({
+        connected: false, instrument_key: instrumentKey, expiry: requestedExpiry,
+        available_expiries: expiries.slice(0, 8),
+        verdict: "WAIT — NO TRADE",
+        error: "Requested expiry was not returned by Upstox for this underlying. Choose one of the listed future expiries."
+      });
     }
 
     const chainUrl = "https://api.upstox.com/v2/option/chain?instrument_key=" +
