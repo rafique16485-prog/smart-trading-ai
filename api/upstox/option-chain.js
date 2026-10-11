@@ -67,7 +67,7 @@ export default async function handler(req, res) {
   if (!instrumentKey) return res.status(400).json({ connected: false, error: "Unsupported underlying. Use nifty or banknifty." });
 
   const requestedExpiry = String(req.query?.expiry || "current_week");
-  if (requestedExpiry !== "current_week" && !/^\\d{4}-\\d{2}-\\d{2}$/.test(requestedExpiry)) {
+  if (requestedExpiry !== "current_week" && !/^\d{4}-\d{2}-\d{2}$/.test(requestedExpiry)) {
     return res.status(400).json({ connected: false, error: "Expiry must be current_week or YYYY-MM-DD." });
   }
 
@@ -79,7 +79,7 @@ export default async function handler(req, res) {
       const contracts = Array.isArray(contractsResult.body?.data) ? contractsResult.body.data : [];
       const today = istToday();
       const expiries = [...new Set(contracts.map(x => String(x?.expiry || x?.expiry_date || "").slice(0, 10))
-        .filter(x => /^\\d{4}-\\d{2}-\\d{2}$/.test(x) && x >= today))].sort();
+        .filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x) && x >= today))].sort();
       if (!expiries.length) {
         return res.status(200).json({
           connected: true, source: "Upstox Option Chain", instrument_key: instrumentKey,
