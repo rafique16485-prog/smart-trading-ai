@@ -10,9 +10,9 @@ module.exports=async function handler(req,res){
  if(!clientId||!clientSecret||!redirectUri)return res.status(500).send("<h2>Upstox Setup Incomplete</h2><p>Required server environment variables are missing.</p>");
  try{
   const body=new URLSearchParams({code,client_id:clientId,client_secret:clientSecret,redirect_uri:redirectUri,grant_type:"authorization_code"});
-  const tokenResponse=await fetch("https://api.upstox.com/v2/login/authorization/token",{method:"POST",headers:{accept:"application/json","Content-Type":"application/x-www-form-urlencoded"},body});
+  const tokenResponse=await fetch("https://api.upstox.com/v2/login/authorization/token",{method:"POST",headers:{accept:"application/json","Content-Type":"application/x-www-form-urlencoded"},body,signal:AbortSignal.timeout(7000)});
   const data=await tokenResponse.json().catch(()=>({}));
-  if(!tokenResponse.ok||!data.access_token)return res.status(502).send("<h2>Upstox Token Exchange Failed</h2><pre>"+esc(JSON.stringify(data,null,2))+"</pre><p><a href=\"/\">Back</a></p>");
+  if(!tokenResponse.ok||!data.access_token)return res.status(502).send("<h2>Upstox Token Exchange Failed</h2><p>Upstox did not accept the login code. Check Client ID, Client Secret and the exact Redirect URI, then reconnect.</p><p><a href=\"/\">Back to Smart Trading AI</a></p>");
   const maxAge=60*60*12;
   const cookies=[`upstox_access_token=${encodeURIComponent(data.access_token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`,"upstox_oauth_state=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0"];
   if(data.extended_token)cookies.push(`upstox_extended_token=${encodeURIComponent(data.extended_token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`);
