@@ -83,8 +83,17 @@ export default async function handler(req, res) {
   if (!instrumentKey) return res.status(400).json({ connected: false, error: "Unsupported underlying. Use nifty or banknifty." });
 
   const requestedExpiry = String(req.query?.expiry || "current_week");
-  if (requestedExpiry !== "current_week" && !/^\d{4}-\d{2}-\d{2}$/.test(requestedExpiry)) {
-    return res.status(400).json({ connected: false, error: "Expiry must be current_week or YYYY-MM-DD." });
+  const isRealDate = (value) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(value + "T00:00:00.000Z");
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  };
+  const today = istToday();
+  if (requestedExpiry !== "current_week" && !isRealDate(requestedExpiry)) {
+    return res.status(400).json({ connected: false, error: "Expiry must be a real calendar date in YYYY-MM-DD format." });
+  }
+  if (requestedExpiry !== "current_week" && requestedExpiry < today) {
+    return res.status(400).json({ connected: false, error: "Requested expiry is in the past. Choose a future expiry. WAIT — NO TRADE." });
   }
 
   try {
@@ -93,9 +102,8 @@ export default async function handler(req, res) {
       const contractsUrl = "https://api.upstox.com/v2/option/contract?instrument_key=" + encodeURIComponent(instrumentKey);
       const contractsResult = await upstoxGet(contractsUrl, tokens);
       const contracts = Array.isArray(contractsResult.body?.data) ? contractsResult.body.data : [];
-      const today = istToday();
       const expiries = [...new Set(contracts.map(x => String(x?.expiry || x?.expiry_date || "").slice(0, 10))
-        .filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x) && x >= today))].sort();
+        .filter(x => isRealDate(x) && x >= today))].sort();
       if (!expiries.length) {
         return res.status(200).json({
           connected: true, source: "Upstox Option Chain", instrument_key: instrumentKey,
