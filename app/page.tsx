@@ -28,8 +28,17 @@ export default function Home(){
    const n=rows.find(q=>norm(q.instrument_key||"").includes("nifty50"));
    const b=rows.find(q=>norm(q.instrument_key||"").includes("niftybank"));
    if(!n || !b || Number(n.last_price)<=0 || Number(b.last_price)<=0){setNotice("Upstox responded, but valid NIFTY/BANK NIFTY quotes are missing. WAIT — NO TRADE.");setQuotes([]);return;}
+   const toMs=(q:Quote)=>{if(q.timestamp==null||q.timestamp==="")return NaN;const raw=q.timestamp;const v=typeof raw==="number"?raw:Number(raw);if(Number.isFinite(v))return v>1e12?v:v>1e9?v*1000:NaN;return new Date(String(raw)).getTime();};
+   const now=Date.now();
+   const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Kolkata",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(now));
+   const get=(k:string)=>parts.find(p=>p.type===k)?.value||"";
+   const mins=Number(get("hour"))*60+Number(get("minute"));
+   const inSession=!["Sat","Sun"].includes(get("weekday"))&&mins>=555&&mins<=930;
+   const ages=[n,b].map(q=>now-toMs(q));
+   if(ages.some(age=>!Number.isFinite(age))){setNotice("Quote timestamp missing or invalid. WAIT — NO TRADE.");setQuotes([]);return;}
+   if(inSession&&ages.some(age=>age< -60000||age>15*60*1000)){setNotice("Quote timestamp stale or future-dated during market hours. WAIT — NO TRADE.");setQuotes([]);return;}
    setQuotes(rows);
-   setNotice("Upstox API returned NIFTY and BANK NIFTY quotes. Check quote timestamp and market session before trading.");
+   setNotice(inSession?"NIFTY and BANK NIFTY quote timestamps passed the 15-minute safety check. Confirm price action and OI before trading.":"Market outside regular weekday NSE hours; these are last available quotes, not live trading signals.");
   } catch { setStatus({connected:false,reason:"unreachable"});setQuotes([]);setNotice("Could not verify Upstox connection. Check API configuration; WAIT — NO TRADE."); }
  },[]);
 
